@@ -1,6 +1,6 @@
 # Japp — transcription locale, synthèse et présentation
 
-> 🌐 **Site de téléchargement : https://alain-soumagne.github.io/japp/**
+> 🌐 **Site de téléchargement : https://alain-soumagne.github.io/Japp/**
 
 Application Windows qui transforme un **enregistrement de cours** (audio ou vidéo) en :
 
