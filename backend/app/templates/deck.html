@@ -12,7 +12,8 @@
   --sans:"Yu Gothic","Hiragino Sans","Meiryo","Segoe UI",system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:#1d1b19;overflow:hidden;font-family:var(--sans)}
+html,body{height:100%;background:var(--paper);overflow:hidden;font-family:var(--sans)}
+html:fullscreen,html:fullscreen body{background:#1d1b19}   /* barres sombres seulement en plein écran */
 #stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:var(--paper);color:var(--ink);overflow:hidden}
 .slide{position:absolute;inset:0;padding:100px 140px 110px;display:none}
 .slide.on{display:block;animation:in .4s ease both}
@@ -52,7 +53,7 @@ h2{font-size:76px;line-height:1.1;margin:16px 0 40px}
 .end .jp{font-family:var(--serif);font-size:150px;color:var(--red);font-weight:700}
 .end .fr{font-size:36px;color:var(--muted);margin-top:10px}
 #bar{position:fixed;left:0;bottom:0;height:5px;background:var(--red);width:0;transition:width .3s;z-index:5}
-#hint{position:fixed;right:18px;bottom:14px;font:14px var(--sans);color:#b9b2a3;z-index:5}
+#hint{position:fixed;right:18px;top:12px;font:14px var(--sans);color:#8f887a;z-index:5;transition:opacity 1s}
 @media print{
   html,body{overflow:visible;background:#fff;height:auto}
   #stage{position:static;transform:none!important;width:auto;height:auto;overflow:visible}
@@ -132,6 +133,7 @@ addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx; 
 addEventListener('resize', fit); fit();
 slides.forEach(s => { s.classList.add('on'); shrink(s); s.classList.remove('on'); });
 show(i);
+setTimeout(() => { document.getElementById('hint').style.opacity = 0; }, 6000);   // l'aide de navigation s'efface
 </script>
 </body>
 </html>

@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Japp — transcris, résume et mets en slides tes cours de japonais, 100 % en local</title>
+<meta name="description" content="Japp transforme l'enregistrement d'un cours en transcription, synthèse et présentation. Whisper et un modèle de langage tournent sur ta carte graphique NVIDIA : rien ne quitte ton PC. Gratuit, open source, pour Windows.">
+<meta name="theme-color" content="#f4efe4">
+<link rel="canonical" href="https://alain-soumagne.github.io/japp/">
+<link rel="icon" href="assets/icon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Japp — tes cours de japonais, transcrits et mis en slides, en local">
+<meta property="og:description" content="Transcription Whisper + synthèse par IA locale + présentation HTML. Gratuit, open source, rien ne quitte ton PC.">
+<meta property="og:url" content="https://alain-soumagne.github.io/japp/">
+<meta property="og:image" content="https://alain-soumagne.github.io/japp/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Japp","operatingSystem":"Windows 10, Windows 11",
+ "applicationCategory":"EducationalApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},
+ "license":"https://opensource.org/license/mit","url":"https://alain-soumagne.github.io/japp/",
+ "description":"Transcription locale de cours, synthèse et présentation HTML avec Whisper et Ollama."}
+</script>
+
+<style>
+:root{
+  --paper:#f4efe4; --paper2:#ebe4d3; --card:#fbf8f0; --ink:#1d1b19; --muted:#5f584e; --line:#cfc6b2;
+  --red:#c8372d; --red-ink:#a82920; --red-soft:#f0d6d0; --green:#3f6b57;
+  --serif:"Yu Mincho","Hiragino Mincho ProN","Noto Serif JP","Source Han Serif","MS PMincho",Georgia,"Times New Roman",serif;
+  --sans:"Yu Gothic UI","Yu Gothic","Hiragino Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  --wrap:1180px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{background:var(--paper);color:var(--ink);font:18px/1.6 var(--sans);-webkit-font-smoothing:antialiased;text-wrap:pretty}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--red);outline-offset:3px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+.skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:#fff;padding:10px 16px;z-index:100}
+.skip:focus{left:8px}
+h1,h2,h3{font-family:var(--serif);font-weight:700;letter-spacing:.005em;text-wrap:balance}
+.kicker{font:700 13px/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--red-ink)}
+.muted{color:var(--muted)}
+
+/* ── navigation ── */
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:20px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.mark{width:38px;height:38px;display:grid;place-items:center;background:var(--red);color:#fff;font:700 22px/1 var(--serif)}
+.brand b{font:700 24px var(--serif)}
+.nav ul{display:flex;gap:26px;list-style:none;align-items:center}
+.nav ul a{text-decoration:none;font-size:15px;font-weight:600;color:var(--muted)}
+.nav ul a:hover{color:var(--ink)}
+.nav .gh{border:1.5px solid var(--ink);padding:7px 14px;color:var(--ink)!important}
+.nav .gh:hover{background:var(--ink);color:#fff!important}
+
+/* ── boutons ── */
+.btn{display:inline-flex;flex-direction:column;justify-content:center;gap:2px;min-height:60px;padding:10px 22px;background:var(--red);color:#fff;text-decoration:none;font:700 18px/1.2 var(--sans);border:0;cursor:pointer;transition:transform .15s,background .15s}
+.btn small{font:500 12.5px/1.2 var(--sans);opacity:.92;letter-spacing:.01em}
+.btn:hover{background:var(--red-ink);transform:translateY(-2px)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink);min-height:60px;justify-content:center}
+.btn.ghost:hover{background:var(--ink);color:#fff}
+
+/* ── hero ── */
+.hero{position:relative;overflow:hidden;padding:44px 0 84px}
+.hero .big{position:absolute;right:-30px;top:-70px;font:700 780px/1 var(--serif);color:var(--paper2);pointer-events:none;user-select:none}
+.hero .sun{position:absolute;right:3%;top:10px;width:200px;height:200px;border-radius:50%;background:#e0584c}
+.hero .wrap{position:relative;display:grid;grid-template-columns:minmax(0,11fr) minmax(0,15fr);gap:40px;align-items:center}
+.hero h1{font-size:clamp(36px,4.2vw,58px);line-height:1.07;margin:16px 0 20px}
+.hero h1 em{font-style:normal;color:var(--red-ink)}
+.hero .lede{font-size:20px;color:var(--muted);max-width:34em}
+.cta{display:grid;grid-template-columns:1fr auto;gap:14px;margin:30px 0 18px}
+.assure{font-size:14.5px;color:#4a443b;display:flex;flex-wrap:wrap;gap:6px 18px}
+.assure span::before{content:"";display:inline-block;width:7px;height:7px;background:var(--red);margin-right:8px;vertical-align:1px}
+.shot{position:relative}
+.shot figure{border:2px solid var(--ink);background:var(--ink);box-shadow:14px 14px 0 var(--red)}
+.shot img{width:100%}
+.hero .shot{margin-right:0;margin-bottom:14px}
+
+/* ── sections ── */
+section{padding:92px 0}
+.head{max-width:760px;margin-bottom:52px}
+.head h2{font-size:clamp(32px,4vw,50px);line-height:1.1;margin:14px 0 14px}
+.head p{color:var(--muted);font-size:19px}
+.alt{background:var(--card);border-block:1px solid var(--line)}
+
+/* étapes */
+.steps{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:0;counter-reset:s;position:relative}
+.steps li{position:relative;padding:0 36px 0 0}
+.steps li+li{padding-left:36px;border-left:2px solid var(--line)}
+.steps .k{font:700 92px/1 var(--serif);color:var(--red);display:block;margin-bottom:6px}
+.steps h3{font-size:26px;margin-bottom:10px}
+.steps p{color:var(--muted);font-size:17px}
+.steps code,.feat code{font:600 14px var(--sans);background:var(--paper2);padding:2px 7px;white-space:nowrap}
+
+/* démo */
+.demo{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:56px;align-items:start}
+.demo ul{list-style:none;margin-top:26px;display:grid;gap:12px}
+.demo li{padding-left:28px;position:relative;font-size:17px}
+.demo li::before{content:"";position:absolute;left:0;top:.62em;width:14px;height:14px;background:var(--red)}
+.frame{position:relative;aspect-ratio:16/9;background:var(--ink);border:2px solid var(--ink);box-shadow:14px 14px 0 var(--red);margin:0 14px 0 0}
+.tools{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:26px 14px 0 0;font-size:15px;color:var(--muted)}
+.tools kbd{font:700 13px var(--sans);border:1.5px solid var(--ink);padding:1px 8px;margin:0 2px;background:var(--card);color:var(--ink)}
+.tools a{font-weight:700;color:var(--red-ink)}
+.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cap{font-size:14px;color:var(--muted);margin-top:26px}
+
+/* galerie */
+.gal{display:grid;grid-template-columns:repeat(12,1fr);gap:28px;margin-top:84px;align-items:start}
+.gal figure{border:2px solid var(--ink);background:var(--ink)}
+.gal figcaption{background:var(--paper);border-top:2px solid var(--ink);padding:10px 14px;font-size:14px;font-weight:600}
+.gal .a{grid-column:1/8}
+.gal .b{grid-column:8/13;margin-top:64px}
+.gal .c{grid-column:3/10}
+
+/* atouts : liste éditoriale */
+.feat{display:grid;grid-template-columns:repeat(2,1fr);column-gap:72px}
+.feat article{padding:30px 0;border-top:2px solid var(--ink);display:grid;grid-template-columns:60px 1fr;gap:6px 14px}
+.feat .n{font:700 15px var(--sans);color:var(--red-ink);padding-top:8px;letter-spacing:.08em}
+.feat h3{font-size:25px;margin-bottom:6px}
+.feat p{color:var(--muted);font-size:17px;grid-column:2}
+.feat article>div{grid-column:2}
+
+/* prérequis */
+.req{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:64px;align-items:start}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:15px 14px 15px 0;border-bottom:1px solid var(--line);font-size:16.5px;vertical-align:top}
+th{width:34%;font:700 14px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.note{background:var(--red-soft);border-left:0;padding:22px 24px;font-size:16px}
+.note b{font-family:var(--serif);font-size:19px;display:block;margin-bottom:6px}
+
+/* installation */
+.inst{list-style:none;display:grid;gap:0;counter-reset:i;max-width:880px}
+.inst li{counter-increment:i;display:grid;grid-template-columns:84px 1fr;gap:6px 18px;padding:28px 0;border-top:2px solid var(--ink)}
+.inst li::before{content:counter(i);font:700 64px/1 var(--serif);color:var(--red)}
+.inst h3{font-size:24px;margin-bottom:6px}
+.inst p{color:var(--muted);font-size:17px}
+.inst .btn{margin-top:16px;align-self:start}
+pre{position:relative;background:var(--ink);color:#e9e3d3;padding:18px 20px;margin-top:14px;font:14px/1.6 Consolas,"Cascadia Mono",monospace;overflow:auto}
+.copy{position:absolute;right:10px;top:10px;background:#34312c;color:#e9e3d3;border:0;padding:6px 12px;font:600 12px var(--sans);cursor:pointer}
+.copy:hover{background:var(--red)}
+details.v{margin-top:14px}
+details.v summary{cursor:pointer;font-weight:700;color:var(--red-ink)}
+
+/* FAQ */
+.faq{max-width:860px}
+.faq details{border-top:1px solid var(--line);padding:20px 0}
+.faq details:last-child{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;font:700 21px var(--serif);list-style:none;display:flex;justify-content:space-between;gap:20px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--red);font:400 30px/1 var(--sans)}
+.faq details[open] summary::after{content:"–"}
+.faq p{color:var(--muted);margin-top:12px;max-width:46em;font-size:17px}
+
+footer{background:var(--ink);color:#cfc7b6;padding:56px 0 48px;font-size:15px}
+footer .wrap{display:grid;grid-template-columns:1.2fr 1fr;gap:40px}
+footer h3{color:#fff;font-size:26px;margin-bottom:8px}
+footer ul{list-style:none;display:grid;gap:8px}
+footer a{color:#fff}
+footer small{display:block;margin-top:26px;color:#8f887a;grid-column:1/-1;font-size:13px;line-height:1.5}
+
+/* apparition */
+.rv{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}.btn{transition:none}}
+
+/* responsive */
+@media (max-width:980px){
+  .hero .wrap,.demo,.req,footer .wrap{grid-template-columns:1fr}
+  .hero .shot{margin-right:0}
+  .hero .sun{width:200px;height:200px;right:6%;top:40px}
+  .hero .big{font-size:560px;right:-120px;top:-70px}
+  .steps{grid-template-columns:1fr}
+  .steps li,.steps li+li{padding:26px 0;border-left:0;border-top:2px solid var(--line)}
+  .feat{grid-template-columns:1fr}
+  .gal{grid-template-columns:1fr}
+  .gal .a,.gal .b,.gal .c{grid-column:auto;margin-top:0}
+  .nav ul li:not(:last-child){display:none}
+  section{padding:68px 0}
+}
+@media (max-width:520px){.wrap{padding:0 20px}.inst li{grid-template-columns:56px 1fr}.inst li::before{font-size:46px}.btn{width:100%}.shot figure,.frame{box-shadow:8px 8px 0 var(--red)}.frame,.tools{margin-right:8px}}
+</style>
+</head>
+<body>
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#" aria-label="Japp — accueil"><span class="mark" aria-hidden="true">学</span><b>Japp</b></a>
+    <nav aria-label="Navigation principale">
+      <ul>
+        <li><a href="#fonctionnement">Fonctionnement</a></li>
+        <li><a href="#apercu">Aperçu</a></li>
+        <li><a href="#prerequis">Prérequis</a></li>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a class="gh" href="https://github.com/Alain-Soumagne/japp">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="contenu">
+
+<!-- ═════ HERO ═════ -->
+<div class="hero">
+  <div class="big" aria-hidden="true">学</div>
+  <div class="sun" aria-hidden="true"></div>
+  <div class="wrap">
+    <div>
+      <p class="kicker">Pour tes cours de japonais — et les autres</p>
+      <h1>Ton cours, <em>transcrit</em>, résumé et mis en slides.</h1>
+      <p class="lede">Dépose l'enregistrement. Japp écoute, rédige la transcription, en tire une synthèse et la transforme en présentation. Tout se passe sur ta carte graphique : rien ne quitte ton PC.</p>
+      <div class="cta">
+        <a class="btn" id="dl" href="https://github.com/Alain-Soumagne/japp/releases/latest">
+          Télécharger pour Windows
+          <small id="dl-meta">Dernière version sur GitHub</small>
+        </a>
+        <a class="btn ghost" href="#apercu">Voir la démo</a>
+      </div>
+      <p class="assure"><span>Gratuit et libre</span><span>Sans compte</span><span>GPU NVIDIA requis</span></p>
+    </div>
+    <div class="shot">
+      <figure><img src="assets/app-presentation.png" width="1440" height="820" alt="Fenêtre de Japp : la présentation d'un cours « Se présenter en japonais » avec ses règles et ses exemples en kana, romaji et français."></figure>
+    </div>
+  </div>
+</div>
+
+<!-- ═════ FONCTIONNEMENT ═════ -->
+<section id="fonctionnement" class="alt">
+  <div class="wrap">
+    <div class="head rv">
+      <p class="kicker">Fonctionnement</p>
+      <h2>Du fichier audio à la fiche de révision, sans rien faire.</h2>
+      <p>Trois étapes, un seul geste de ta part : glisser le fichier.</p>
+    </div>
+    <ol class="steps rv">
+      <li>
+        <span class="k" aria-hidden="true">音</span>
+        <h3>1 · Tu déposes</h3>
+        <p>Audio ou vidéo, 15 minutes ou une heure : <code>mp3</code> <code>m4a</code> <code>wav</code> <code>mp4</code> <code>mkv</code>… Plusieurs fichiers à la fois : ils se mettent en file.</p>
+      </li>
+      <li>
+        <span class="k" aria-hidden="true">文</span>
+        <h3>2 · Japp rédige</h3>
+        <p>Whisper transcrit sur ta carte graphique, en japonais comme en français. Un modèle local (via Ollama) en tire notions, règles, exemples et devoirs. Environ 2 minutes pour 19 minutes de cours, sur une RTX 5080.</p>
+      </li>
+      <li>
+        <span class="k" aria-hidden="true">学</span>
+        <h3>3 · Tu révises</h3>
+        <p>Une présentation prête à projeter, la transcription horodatée, les sous-titres et la synthèse. Tu corriges ce que tu veux, Japp régénère.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═════ APERÇU ═════ -->
+<section id="apercu">
+  <div class="wrap">
+    <div class="demo">
+      <div class="rv">
+        <p class="kicker">Aperçu</p>
+        <h2 style="font-size:clamp(32px,4vw,48px);line-height:1.1;margin:14px 0 6px">Essaie la présentation, elle est vraie.</h2>
+        <ul>
+          <li>Clique sur la moitié droite pour avancer, sur la gauche pour reculer.</li>
+          <li>La touche <b>F</b> passe en plein écran.</li>
+          <li>Les exemples en japonais s'affichent en kana, en romaji et en français.</li>
+        </ul>
+        <p class="cap">Exemple fictif généré par Japp à partir d'un cours imaginaire, jamais d'un vrai cours.</p>
+      </div>
+      <div class="rv">
+        <div class="frame">
+          <iframe src="demo/deck.html" title="Exemple de présentation générée par Japp" sandbox="allow-scripts" loading="lazy" allowfullscreen></iframe>
+        </div>
+        <div class="tools"><span>Clique dans le cadre, puis <kbd>←</kbd> <kbd>→</kbd></span><a href="demo/deck.html" target="_blank" rel="noopener">Ouvrir en plein écran ↗</a></div>
+      </div>
+    </div>
+
+    <div class="gal">
+      <figure class="a rv"><img src="assets/app-nouveau.png" loading="lazy" width="1440" height="820" alt="Écran d'accueil de Japp : zone de dépôt des fichiers, choix de la langue et du modèle de synthèse."><figcaption>Dépose tes fichiers, choisis la langue.</figcaption></figure>
+      <figure class="b rv"><img src="assets/app-transcription.png" loading="lazy" width="1440" height="820" alt="Onglet Transcription de Japp : texte modifiable avec le bouton pour régénérer la synthèse."><figcaption>Corrige la transcription, puis régénère.</figcaption></figure>
+      <figure class="c rv"><img src="assets/app-synthese.png" loading="lazy" width="1440" height="820" alt="Onglet Synthèse de Japp : notions, règles et exemples vérifiés."><figcaption>La synthèse, avec le nombre d'exemples vérifiés.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ ATOUTS ═════ -->
+<section class="alt">
+  <div class="wrap">
+    <div class="head rv">
+      <p class="kicker">Pensé pour les cours</p>
+      <h2>Ce qui change par rapport à un simple « speech-to-text ».</h2>
+    </div>
+    <div class="feat">
+      <article class="rv"><span class="n">01</span><h3>Tout reste chez toi</h3><p>Pas de compte, pas de cloud, pas de télémétrie. Ton audio, tes notes et tes présentations restent sur ton disque. Internet ne sert qu'à télécharger les modèles, une seule fois.</p></article>
+      <article class="rv"><span class="n">02</span><h3>Japonais, français, et le mélange</h3><p>Un cours en français avec des mots japonais ? Japp les écrit en romaji, lisible pour réviser. Un cours entièrement en japonais ? Choisis la langue, ou laisse-le deviner.</p></article>
+      <article class="rv"><span class="n">03</span><h3>Des exemples vérifiés, pas inventés</h3><p>Un modèle de langage peut inventer des phrases. Japp ne garde un exemple que s'il figure vraiment dans la transcription, et affiche combien ont passé le contrôle.</p></article>
+      <article class="rv"><span class="n">04</span><h3>Tu corriges avant de résumer</h3><p>La transcription est modifiable. Tu rectifies un nom propre, tu régénères la synthèse en un clic, sans retranscrire l'audio.</p></article>
+      <article class="rv"><span class="n">05</span><h3>Des fichiers qui t'appartiennent</h3><p><code>.txt</code>, <code>.srt</code>, <code>.md</code> horodaté, <code>.json</code> et une présentation <code>.html</code> autonome : tu les ouvres, les partages ou les archives où tu veux.</p></article>
+      <article class="rv"><span class="n">06</span><h3>Transparent et vérifiable</h3><p>Code ouvert sous licence MIT, installateur construit par GitHub Actions, somme SHA-256 et attestation de provenance fournies. La <a href="https://github.com/Alain-Soumagne/japp/blob/main/SECURITY.md">politique de sécurité</a> détaille ce qui est protégé.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ PRÉREQUIS ═════ -->
+<section id="prerequis">
+  <div class="wrap req">
+    <div class="rv">
+      <p class="kicker">Prérequis</p>
+      <h2 style="font-size:clamp(32px,4vw,48px);line-height:1.1;margin:14px 0 28px">Une carte NVIDIA, et c'est tout.</h2>
+      <table>
+        <tr><th>Système</th><td>Windows 10 ou 11, 64 bits</td></tr>
+        <tr><th>Carte graphique</th><td>NVIDIA, série RTX recommandée. Pilote récent (570 ou plus pour les RTX 50).</td></tr>
+        <tr><th>Mémoire vidéo</th><td>12 Go ou plus conseillés. Avec 8–10 Go, choisis le modèle plus léger <code>gemma4:e4b</code>.</td></tr>
+        <tr><th>Mémoire / disque</th><td>16 Go de RAM conseillés · environ 20 Go libres</td></tr>
+        <tr><th>Ollama</th><td>Gratuit, pour la synthèse — <a href="https://ollama.com/download">ollama.com/download</a></td></tr>
+        <tr><th>Internet</th><td>Au premier lancement seulement. Ensuite, tout fonctionne hors ligne.</td></tr>
+      </table>
+      <p class="cap">Pas besoin d'installer Python, ffmpeg ni CUDA : Japp s'en charge.</p>
+    </div>
+    <aside class="note rv">
+      <b>Testé sur RTX 5080 (16 Go)</b>
+      Les autres cartes ne sont pas encore validées. Si tu essaies avec une RTX 30xx ou 40xx, dis-moi comment ça s'est passé : <a href="https://github.com/Alain-Soumagne/japp/issues">ouvre un ticket</a>.
+      <br><br><b>Relis toujours le résultat.</b> Whisper peut mal entendre un nom propre, et un modèle de langage peut se tromper : Japp t'aide à réviser, il ne remplace pas ton professeur.
+    </aside>
+  </div>
+</section>
+
+<!-- ═════ INSTALLATION ═════ -->
+<section id="installation" class="alt">
+  <div class="wrap">
+    <div class="head rv">
+      <p class="kicker">Installation</p>
+      <h2>Quatre étapes, quinze minutes la première fois.</h2>
+    </div>
+    <ol class="inst">
+      <li class="rv"><div><h3>Installe Ollama</h3><p>C'est le moteur qui fait tourner le modèle de synthèse sur ta machine. Garde les options par défaut, tu n'as pas besoin de le lancer.</p><a class="btn ghost" href="https://ollama.com/download" style="min-height:48px;font-size:16px">ollama.com/download ↗</a></div></li>
+      <li class="rv"><div><h3>Télécharge Japp</h3><p id="dl2-meta">Récupère <b>Japp-Setup</b> dans la dernière version.</p><a class="btn" id="dl2" href="https://github.com/Alain-Soumagne/japp/releases/latest">Télécharger pour Windows<small>Installateur Windows · gratuit</small></a>
+        <details class="v"><summary>Vérifier le fichier (recommandé)</summary>
+          <p style="margin-top:10px">Compare la somme SHA-256 avec <code>SHA256SUMS.txt</code> de la release, et vérifie qu'il a bien été construit par GitHub Actions.</p>
+          <pre><button class="copy" type="button" data-copy>Copier</button><code>Get-FileHash .\Japp-Setup-*.exe -Algorithm SHA256
+gh attestation verify .\Japp-Setup-*.exe --repo Alain-Soumagne/japp</code></pre>
+        </details></div></li>
+      <li class="rv"><div><h3>Lance l'installateur</h3><p>Windows SmartScreen peut afficher « Windows a protégé votre ordinateur » : l'installateur n'est pas signé numériquement (un certificat de signature est payant). Clique sur <b>Informations complémentaires</b>, puis <b>Exécuter quand même</b>.</p></div></li>
+      <li class="rv"><div><h3>Premier démarrage</h3><p>Japp prépare son moteur (Python et bibliothèques de transcription, environ 3 Go). Compte 5 à 15 minutes selon ta connexion, et ne ferme pas la fenêtre. Les démarrages suivants prennent quelques secondes. À la première synthèse, le modèle (environ 8 Go) se télécharge tout seul.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═════ FAQ ═════ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="head rv">
+      <p class="kicker">Questions fréquentes</p>
+      <h2>Avant de te lancer.</h2>
+    </div>
+    <div class="faq rv">
+      <details><summary>Mes cours sont-ils envoyés quelque part ?</summary><p>Non. La transcription et la synthèse s'exécutent sur ta machine. Japp ne se connecte à internet que pour télécharger Python, les bibliothèques et les modèles (GitHub, PyPI, Hugging Face, Ollama), puis fonctionne hors ligne.</p></details>
+      <details><summary>Pourquoi faut-il installer Ollama ?</summary><p>Ollama fait tourner le modèle de langage qui rédige la synthèse. Sans lui, Japp transcrit quand même, mais ne résume pas. Japp le démarre et l'arrête tout seul.</p></details>
+      <details><summary>Windows affiche un avertissement, c'est normal ?</summary><p>Oui : l'installateur n'est pas signé numériquement, car un certificat coûte cher pour un projet libre. Vérifie la somme SHA-256 et l'attestation de provenance (voir plus haut), puis passe l'avertissement.</p></details>
+      <details><summary>Ça marche pour d'autres langues que le japonais ?</summary><p>Oui, Whisper gère une centaine de langues. Japp est affiné pour les cours de japonais donnés en français (romaji, exemples en kana), mais la transcription et la synthèse restent utiles pour tout cours.</p></details>
+      <details><summary>Y a-t-il une version Mac ou Linux ?</summary><p>Pas pour l'instant : Japp est construit pour Windows et les cartes NVIDIA.</p></details>
+      <details><summary>Je n'ai que 8 Go de mémoire vidéo.</summary><p>Choisis le modèle <code>gemma4:e4b</code> dans les options : il est plus léger, mais moins précis. Les enregistrements longs peuvent aussi demander plus de temps.</p></details>
+      <details><summary>Comment supprimer mes données ?</summary><p>Le bouton « Supprimer » efface un cours. Pour tout retirer : désinstalle Japp, puis supprime le dossier <code>%LOCALAPPDATA%\Japp</code>. Les modèles (Whisper, Ollama) se suppriment séparément.</p></details>
+      <details><summary>Où signaler un bug ou proposer une idée ?</summary><p>Sur <a href="https://github.com/Alain-Soumagne/japp/issues">GitHub</a>. Pour un problème de sécurité, utilise le signalement privé décrit dans <a href="https://github.com/Alain-Soumagne/japp/blob/main/SECURITY.md">SECURITY.md</a>.</p></details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <h3>Japp</h3>
+      <p>Japon + application. Un outil libre pour transformer tes cours en notes et en slides, en local.</p>
+    </div>
+    <ul>
+      <li><a href="https://github.com/Alain-Soumagne/japp">Code source</a></li>
+      <li><a href="https://github.com/Alain-Soumagne/japp/releases">Toutes les versions</a></li>
+      <li><a href="https://github.com/Alain-Soumagne/japp/issues">Signaler un problème</a></li>
+      <li><a href="https://github.com/Alain-Soumagne/japp/blob/main/SECURITY.md">Sécurité</a> · <a href="https://github.com/Alain-Soumagne/japp/blob/main/LICENSE">Licence MIT</a></li>
+    </ul>
+    <small>Japp n'est affilié ni à OpenAI, NVIDIA, Google ni Ollama. Whisper, Gemma, Ollama et NVIDIA sont des marques de leurs propriétaires respectifs. Les modèles sont téléchargés par l'utilisateur sous leur propre licence.</small>
+  </div>
+</footer>
+
+<script>
+(() => {
+  // ── bouton de téléchargement : lit la dernière release publiée ──
+  const REPO = 'Alain-Soumagne/japp';
+  const fmt = (b) => (b / 1e6).toFixed(0) + ' Mo';
+  fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } })
+    .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+    .then((rel) => {
+      const exe = (rel.assets || []).find((a) => /\.exe$/i.test(a.name));
+      if (!exe) return;
+      const version = rel.tag_name.replace(/^v/, '');
+      for (const [btn, meta] of [['dl', 'dl-meta'], ['dl2', null]]) {
+        const a = document.getElementById(btn);
+        a.href = exe.browser_download_url;
+        if (meta) document.getElementById(meta).textContent = `Version ${version} · ${fmt(exe.size)} · Windows 10/11`;
+        else a.querySelector('small').textContent = `Version ${version} · ${fmt(exe.size)}`;
+      }
+      document.getElementById('dl2-meta').innerHTML = `Récupère <b>${exe.name}</b> (${fmt(exe.size)}).`;
+    })
+    .catch(() => { /* hors ligne ou pas encore de release : les liens pointent vers la page des versions */ });
+
+  // ── copie des commandes ──
+  document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText); b.textContent = 'Copié ✓'; }
+    catch { b.textContent = 'Sélectionne le texte'; }
+    setTimeout(() => (b.textContent = 'Copier'), 1800);
+  }));
+
+  // ── apparition progressive ──
+  const items = document.querySelectorAll('.rv');
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) { items.forEach((e) => e.classList.add('in')); return; }
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.12 });
+  items.forEach((e) => io.observe(e));
+})();
+</script>
+</body>
+</html>

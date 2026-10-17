@@ -8,9 +8,15 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { ensureEnv } = require('./bootstrap');
 
-// Tout (journaux, environnement Python, données) vit dans %LOCALAPPDATA%\Cours — jamais dans le dossier d'installation.
+// Tout (journaux, environnement Python, données) vit dans %LOCALAPPDATA%\Japp — jamais dans le dossier d'installation.
 const LOCAL = process.env.LOCALAPPDATA || app.getPath('appData');
-app.setPath('userData', path.join(LOCAL, 'Cours'));
+const USER_DIR = path.join(LOCAL, 'Japp');
+// Migration depuis la v0.1.0 (application alors nommée « Cours ») : on déplace le dossier au lieu de le recréer (~3 Go).
+try {
+  const legacy = path.join(LOCAL, 'Cours');
+  if (fs.existsSync(legacy) && !fs.existsSync(USER_DIR)) fs.renameSync(legacy, USER_DIR);
+} catch { /* dossier verrouillé : on repartira d'un dossier neuf */ }
+app.setPath('userData', USER_DIR);
 
 const PACKAGED = app.isPackaged;
 const RES = process.resourcesPath;
@@ -18,7 +24,7 @@ const APP_ROOT = path.resolve(__dirname, '..');                       // dev : d
 const USER = app.getPath('userData');
 const ALLOWED_EXTERNAL = ['https://ollama.com/', 'https://github.com/'];
 
-let PORT = Number(process.env.COURS_PORT || 0);
+let PORT = Number(process.env.JAPP_PORT || 0);
 let BASE = '';
 let backend = null;
 let win = null;
@@ -56,7 +62,7 @@ function logStream(name) {
 }
 
 async function resolvePython() {
-  if (process.env.COURS_PYTHON) return process.env.COURS_PYTHON;
+  if (process.env.JAPP_PYTHON) return process.env.JAPP_PYTHON;
   if (!PACKAGED) {
     const dev = path.join(APP_ROOT, '.venv', 'Scripts', 'python.exe');
     if (exists(dev)) return dev;
@@ -76,7 +82,7 @@ async function resolvePython() {
 async function startBackend() {
   if (!PORT) PORT = await freePort();
   BASE = `http://127.0.0.1:${PORT}`;
-  if (process.env.COURS_PORT && (await health())) return;              // backend de dev déjà lancé
+  if (process.env.JAPP_PORT && (await health())) return;              // backend de dev déjà lancé
 
   const py = await resolvePython();
   status('Démarrage du moteur local…', null);
@@ -86,9 +92,9 @@ async function startBackend() {
     ...process.env,
     HF_HUB_DISABLE_SYMLINKS_WARNING: '1',
     PYTHONUTF8: '1',
-    COURS_DATA_DIR: process.env.COURS_DATA_DIR || path.join(USER, 'data'),
+    JAPP_DATA_DIR: process.env.JAPP_DATA_DIR || path.join(USER, 'data'),
   };
-  if (PACKAGED) env.COURS_FRONTEND_DIR = path.join(RES, 'frontend');
+  if (PACKAGED) env.JAPP_FRONTEND_DIR = path.join(RES, 'frontend');
   backend = spawn(py, ['-m', 'app', '--port', String(PORT)], { cwd: backendDir, env, stdio: ['ignore', log, log], windowsHide: true });
   backend.on('exit', (code) => {
     backend = null;
@@ -126,7 +132,7 @@ async function createWindow() {
 
   win = new BrowserWindow({
     width: 1400, height: 900, minWidth: 980, minHeight: 600, backgroundColor: '#1d1b19',
-    title: 'Cours – transcription locale', autoHideMenuBar: true,
+    title: 'Japp – transcription locale', autoHideMenuBar: true,
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

@@ -10,7 +10,7 @@ Seule la dernière version publiée reçoit des correctifs de sécurité.
 
 ## Modèle de menace
 
-Cours est une application **locale** : elle ne comporte ni compte, ni serveur distant, ni télémétrie.
+Japp est une application **locale** : elle ne comporte ni compte, ni serveur distant, ni télémétrie.
 Les enregistrements, transcriptions, synthèses et présentations restent sur la machine de l'utilisateur.
 
 | Surface | Mesure |
@@ -28,4 +28,4 @@ Les enregistrements, transcriptions, synthèses et présentations restent sur la
 - L'installateur Windows n'est pas signé numériquement (certificat payant) : SmartScreen peut afficher un avertissement. Vérifie la somme SHA-256 et l'attestation (voir le README).
 - Les modèles (Whisper, Gemma, Qwen…) sont téléchargés depuis Hugging Face / Ollama au premier usage ; leur intégrité repose sur ces services.
 - Les dépendances de **build** d'`electron-builder` signalent des alertes de gravité modérée (`npm audit`) : elles n'existent qu'au moment de la construction et ne sont pas livrées dans l'application.
-- Quiconque peut exécuter du code sur ta session Windows peut lire tes données (dossier `%LOCALAPPDATA%\Cours`) : elles ne sont pas chiffrées.
+- Quiconque peut exécuter du code sur ta session Windows peut lire tes données (dossier `%LOCALAPPDATA%\Japp`) : elles ne sont pas chiffrées.

@@ -22,7 +22,7 @@ git push origin main v0.2.0
 ```
 
 Suis l'avancement dans l'onglet **Actions**. En ~10 minutes, la page **Releases** contient :
-`Cours-Setup-0.2.0.exe` et `SHA256SUMS.txt`, avec les notes générées automatiquement.
+`Japp-Setup-0.2.0.exe` et `SHA256SUMS.txt`, avec les notes générées automatiquement.
 Un tag contenant un tiret (`v0.2.0-beta.1`) crée une *pré-version*.
 
 Le workflow échoue volontairement si : le tag ne correspond pas à `electron/package.json`,
@@ -35,7 +35,7 @@ Le workflow échoue volontairement si : le tag ne correspond pas à `electron/pa
 - [ ] **Identité Git** : utilise l'adresse *noreply* de GitHub pour ne pas exposer ton e-mail dans l'historique :
       `git config user.name "ton-pseudo"` et `git config user.email "ID+ton-pseudo@users.noreply.github.com"`
       (GitHub → Settings → Emails → « Keep my email addresses private »). Un ID numérique s'obtient avec `https://api.github.com/users/<pseudo>`.
-- [ ] Le `README.md` pointe vers le dépôt `Alain-Soumagne/transcribe` (à adapter si le dépôt est renommé).
+- [ ] Le `README.md` pointe vers le dépôt `Alain-Soumagne/japp` (à adapter si le dépôt est renommé).
 - [ ] Dans **Settings → Code security** du dépôt, active : *Dependabot alerts*, *Dependabot security updates*,
       *Secret scanning* + *Push protection*, *Private vulnerability reporting*.
 - [ ] Dans **Settings → Actions → General** : *Workflow permissions* = « Read repository contents » (les workflows
@@ -63,5 +63,5 @@ L'installateur n'est pas signé : SmartScreen avertit les nouveaux utilisateurs.
 
 Environ 110 Mo : Electron, l'interface, le backend Python (code source), `requirements.txt` et `uv.exe`.
 L'environnement Python (≈ 2,5 Go, dont les bibliothèques CUDA) n'est **pas** embarqué : il est créé au premier lancement
-dans `%LOCALAPPDATA%\Cours\env` (voir `electron/bootstrap.js`). Cela évite de dépasser la limite de 2 Go d'une release GitHub
+dans `%LOCALAPPDATA%\Japp\env` (voir `electron/bootstrap.js`). Cela évite de dépasser la limite de 2 Go d'une release GitHub
 et de redistribuer les bibliothèques NVIDIA.

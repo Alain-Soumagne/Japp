@@ -135,7 +135,7 @@ const STAGES: { id: string; label: string }[] = [
     .spacer { flex: 1; }
     .dl { font-size: 12px; color: var(--muted); text-decoration: none; padding: 4px 8px; border: 1px solid var(--line); margin-left: 4px; }
     .dl:hover { color: var(--red); border-color: var(--red); }
-    .deck-wrap { position: relative; aspect-ratio: 16/9; width: 100%; max-height: calc(100vh - 260px); background: #1d1b19; }
+    .deck-wrap { position: relative; aspect-ratio: 16/9; width: min(100%, calc((100vh - 270px) * 16 / 9)); background: var(--paper); }
     .deck-wrap iframe { width: 100%; height: 100%; border: 0; }
     .open { position: absolute; right: 10px; top: 10px; background: #fffa !important; }
     .editor textarea { width: 100%; height: calc(100vh - 360px); min-height: 280px; font: 15px/1.6 var(--sans); padding: 16px; border: 1px solid var(--line); background: var(--card); color: var(--ink); resize: vertical; }

@@ -2,4 +2,4 @@
 import os
 import tempfile
 
-os.environ["COURS_DATA_DIR"] = tempfile.mkdtemp(prefix="cours-test-")
+os.environ["JAPP_DATA_DIR"] = tempfile.mkdtemp(prefix="japp-test-")

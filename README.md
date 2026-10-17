@@ -1,4 +1,6 @@
-# Cours — transcription locale, synthèse et présentation
+# Japp — transcription locale, synthèse et présentation
+
+> 🌐 **Site de téléchargement : https://alain-soumagne.github.io/japp/**
 
 Application Windows qui transforme un **enregistrement de cours** (audio ou vidéo) en :
 
@@ -36,16 +38,16 @@ Audio / vidéo ──► Whisper large-v3 (GPU) ──► transcription ──�
 ## 2. Installation (utilisateur)
 
 ### Étape 1 — Installer Ollama
-Télécharge et installe [Ollama](https://ollama.com/download). Laisse les options par défaut. Il n'est pas nécessaire de le lancer : Cours le démarre quand il en a besoin.
+Télécharge et installe [Ollama](https://ollama.com/download). Laisse les options par défaut. Il n'est pas nécessaire de le lancer : Japp le démarre quand il en a besoin.
 
-### Étape 2 — Télécharger Cours
-Va sur la page [**Releases**](../../releases/latest) du dépôt et télécharge **`Cours-Setup-x.y.z.exe`**.
+### Étape 2 — Télécharger Japp
+Va sur la page [**Releases**](../../releases/latest) du dépôt et télécharge **`Japp-Setup-x.y.z.exe`**.
 
 *(Facultatif mais recommandé) Vérifie le fichier* — dans PowerShell, depuis le dossier de téléchargement :
 
 ```powershell
-Get-FileHash .\Cours-Setup-*.exe -Algorithm SHA256    # compare avec SHA256SUMS.txt de la release
-gh attestation verify .\Cours-Setup-*.exe --repo Alain-Soumagne/transcribe   # prouve que le fichier a été construit par GitHub Actions
+Get-FileHash .\Japp-Setup-*.exe -Algorithm SHA256    # compare avec SHA256SUMS.txt de la release
+gh attestation verify .\Japp-Setup-*.exe --repo Alain-Soumagne/japp   # prouve que le fichier a été construit par GitHub Actions
 ```
 
 ### Étape 3 — Lancer l'installateur
@@ -57,7 +59,7 @@ Double-clique sur le fichier.
 Choisis le dossier d'installation (ou garde celui par défaut), puis termine.
 
 ### Étape 4 — Premier démarrage (une seule fois)
-Au premier lancement, Cours prépare son moteur : il télécharge Python et les bibliothèques de transcription (≈ 3 Go).
+Au premier lancement, Japp prépare son moteur : il télécharge Python et les bibliothèques de transcription (≈ 3 Go).
 Une barre de progression s'affiche ; compte **5 à 15 minutes** selon ta connexion. **Ne ferme pas la fenêtre.**
 Les démarrages suivants prennent quelques secondes.
 
@@ -72,7 +74,7 @@ Pour gagner du temps, tu peux le préparer à l'avance dans un terminal : `ollam
 
 ## 3. Utilisation
 
-1. Ouvre **Cours**.
+1. Ouvre **Japp**.
 2. **Glisse ton fichier** (ou plusieurs) dans la zone centrale, ou clique pour le choisir.
    Formats : mp3, m4a, wav, flac, ogg, opus, mp4, mkv, mov, webm, avi…
 3. Avant de déposer, règle si besoin :
@@ -87,7 +89,7 @@ Pour gagner du temps, tu peux le préparer à l'avance dans un terminal : `ollam
    - Boutons de téléchargement : `.txt`, `.srt`, `.md`, `.json`, `.html`.
 
 ### Où sont mes données ?
-Tout est dans `%LOCALAPPDATA%\Cours` (copie-colle ce chemin dans l'explorateur) :
+Tout est dans `%LOCALAPPDATA%\Japp` (copie-colle ce chemin dans l'explorateur) :
 
 | Élément | Emplacement |
 |---|---|
@@ -100,7 +102,7 @@ Tout est dans `%LOCALAPPDATA%\Cours` (copie-colle ce chemin dans l'explorateur) 
 Le bouton **Supprimer** efface un cours et tous ses fichiers.
 
 ### Désinstaller
-*Paramètres Windows → Applications → Cours → Désinstaller.* Par prudence, tes données et l'environnement ne sont pas supprimés : efface ensuite le dossier `%LOCALAPPDATA%\Cours` pour récupérer l'espace. Les modèles (Whisper, Ollama) se suppriment séparément (dossiers ci-dessus ou `ollama rm gemma4:12b`).
+*Paramètres Windows → Applications → Japp → Désinstaller.* Par prudence, tes données et l'environnement ne sont pas supprimés : efface ensuite le dossier `%LOCALAPPDATA%\Japp` pour récupérer l'espace. Les modèles (Whisper, Ollama) se suppriment séparément (dossiers ci-dessus ou `ollama rm gemma4:12b`).
 
 ---
 
@@ -128,9 +130,9 @@ Le bouton **Supprimer** efface un cours et tous ses fichiers.
 | Symptôme | Cause probable | Solution |
 |---|---|---|
 | Bandeau « Aucun GPU NVIDIA détecté » | Pilote absent ou obsolète | Installe/mets à jour le pilote NVIDIA, redémarre, vérifie `nvidia-smi`. |
-| Bandeau « Ollama n'est pas installé » | Ollama manquant | Installe-le depuis [ollama.com/download](https://ollama.com/download) (bouton dans l'application), relance Cours. |
-| Le premier démarrage échoue ou reste bloqué | Connexion coupée, antivirus, disque plein | Vérifie internet et l'espace disque, relance Cours (les fichiers déjà téléchargés sont réutilisés), consulte `%LOCALAPPDATA%\Cours\setup.log`. |
-| « Moteur arrêté » / fenêtre qui ne s'ouvre pas | Erreur du moteur local | Lis `%LOCALAPPDATA%\Cours\backend.log`. Pour repartir de zéro : ferme Cours, supprime `%LOCALAPPDATA%\Cours\env`, relance. |
+| Bandeau « Ollama n'est pas installé » | Ollama manquant | Installe-le depuis [ollama.com/download](https://ollama.com/download) (bouton dans l'application), relance Japp. |
+| Le premier démarrage échoue ou reste bloqué | Connexion coupée, antivirus, disque plein | Vérifie internet et l'espace disque, relance Japp (les fichiers déjà téléchargés sont réutilisés), consulte `%LOCALAPPDATA%\Japp\setup.log`. |
+| « Moteur arrêté » / fenêtre qui ne s'ouvre pas | Erreur du moteur local | Lis `%LOCALAPPDATA%\Japp\backend.log`. Pour repartir de zéro : ferme Japp, supprime `%LOCALAPPDATA%\Japp\env`, relance. |
 | Erreur CUDA / mémoire insuffisante | VRAM trop juste | Ferme les jeux/applications GPU, ou choisis `gemma4:e4b`. |
 | La synthèse échoue mais la transcription est bonne | Ollama ou modèle indisponible | Ouvre l'onglet *Transcription* puis *Enregistrer et régénérer*, ou vérifie `ollama list`. |
 | Transcription vide ou absurde | Mauvaise langue, audio très bruité | Force la langue (*Français* / *Japonais*), ajoute du vocabulaire, vérifie l'audio. |
@@ -155,8 +157,8 @@ scripts/     contrôle des données sensibles
 **Prérequis développeur** : Windows, GPU NVIDIA, [Node.js](https://nodejs.org) `^22.22.3` ou `^24.15`, [uv](https://docs.astral.sh/uv/), [Ollama](https://ollama.com/download).
 
 ```powershell
-git clone https://github.com/Alain-Soumagne/transcribe.git
-cd transcribe
+git clone https://github.com/Alain-Soumagne/japp.git
+cd japp
 
 # Python 3.12 + dépendances (versions épinglées)
 uv venv --python 3.12 .venv
@@ -172,7 +174,7 @@ cd frontend; npm ci; npm run build; cd ..
 cd electron; npm ci; npm start
 ```
 
-Construire l'installateur en local : `cd electron; npm run dist` → `electron/dist/Cours-Setup-<version>.exe`.
+Construire l'installateur en local : `cd electron; npm run dist` → `electron/dist/Japp-Setup-<version>.exe`.
 Avant tout *commit* public : `python scripts/check-sensitive.py`.
 
 Publier une version : voir [docs/RELEASING.md](docs/RELEASING.md).

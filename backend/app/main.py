@@ -1,4 +1,4 @@
-"""API locale (FastAPI) de l'application Cours → Transcription → Synthèse → Présentation."""
+"""API locale (FastAPI) de l'application Japp → Transcription → Synthèse → Présentation."""
 import asyncio
 import json
 import os
@@ -23,7 +23,7 @@ async def _lifespan(_: FastAPI):
     ollama_mgr.stop_own_server()
 
 
-app = FastAPI(title="Cours Transcriber", docs_url=None, redoc_url=None, openapi_url=None, lifespan=_lifespan)
+app = FastAPI(title="Japp", docs_url=None, redoc_url=None, openapi_url=None, lifespan=_lifespan)
 
 # ---------------------------------------------------------------------------
 # Sécurité : l'API n'écoute que sur 127.0.0.1 et ne doit pas être pilotable depuis une page web quelconque.
@@ -32,7 +32,7 @@ app = FastAPI(title="Cours Transcriber", docs_url=None, redoc_url=None, openapi_
 #  - contrôle de l'Origin sur les requêtes qui modifient l'état : bloque le CSRF depuis un site tiers.
 # ---------------------------------------------------------------------------
 ALLOWED_HOSTS = {"127.0.0.1", "localhost", "[::1]"}
-EXTRA_ORIGINS = {o.strip().rstrip("/") for o in os.environ.get("COURS_DEV_ORIGINS", "").split(",") if o.strip()}
+EXTRA_ORIGINS = {o.strip().rstrip("/") for o in os.environ.get("JAPP_DEV_ORIGINS", "").split(",") if o.strip()}
 MEDIA_EXT = {".mp3", ".m4a", ".aac", ".wav", ".flac", ".ogg", ".opus", ".wma", ".aiff", ".mp4", ".mkv", ".mov",
              ".avi", ".webm", ".m4v", ".mpg", ".mpeg", ".ts", ".3gp"}
 MAX_UPLOAD = 20 * 1024 ** 3  # 20 Go
@@ -228,6 +228,6 @@ def resummarize(job_id: str, body: ResumBody) -> dict:
 import os  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
-_FRONT = Path(os.environ.get("COURS_FRONTEND_DIR", Path(__file__).resolve().parents[2] / "frontend" / "dist" / "frontend" / "browser"))
+_FRONT = Path(os.environ.get("JAPP_FRONTEND_DIR", Path(__file__).resolve().parents[2] / "frontend" / "dist" / "frontend" / "browser"))
 if _FRONT.exists():
     app.mount("/", StaticFiles(directory=_FRONT, html=True), name="ui")

@@ -59,7 +59,7 @@ jobs:
         shell: pwsh
         working-directory: electron/dist
         run: |
-          Get-ChildItem Cours-Setup-*.exe | ForEach-Object {
+          Get-ChildItem Japp-Setup-*.exe | ForEach-Object {
             $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "$h *$($_.Name)" | Out-File -Encoding ascii -Append SHA256SUMS.txt
           }
@@ -68,13 +68,13 @@ jobs:
       - name: Attestation de provenance (SLSA)
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
-          subject-path: electron/dist/Cours-Setup-*.exe
+          subject-path: electron/dist/Japp-Setup-*.exe
 
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: installateur-windows
           path: |
-            electron/dist/Cours-Setup-*.exe
+            electron/dist/Japp-Setup-*.exe
             electron/dist/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 7
@@ -95,22 +95,22 @@ jobs:
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: |
-            release/Cours-Setup-*.exe
+            release/Japp-Setup-*.exe
             release/SHA256SUMS.txt
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}
           body: |
             ## Installation
             1. Installe [Ollama](https://ollama.com/download) (pour la synthèse).
-            2. Télécharge **Cours-Setup-*.exe** ci-dessous et lance-le.
+            2. Télécharge **Japp-Setup-*.exe** ci-dessous et lance-le.
             3. Au premier démarrage, l'application prépare son environnement Python (~3 Go, quelques minutes, internet requis).
 
             Prérequis détaillés et dépannage : voir le [README](https://github.com/${{ github.repository }}#readme).
 
             ### Vérifier le fichier
             ```powershell
-            Get-FileHash .\Cours-Setup-*.exe -Algorithm SHA256   # à comparer avec SHA256SUMS.txt
-            gh attestation verify .\Cours-Setup-*.exe --repo ${{ github.repository }}
+            Get-FileHash .\Japp-Setup-*.exe -Algorithm SHA256   # à comparer avec SHA256SUMS.txt
+            gh attestation verify .\Japp-Setup-*.exe --repo ${{ github.repository }}
             ```
             > L'installateur n'est pas signé numériquement : Windows SmartScreen peut afficher un avertissement
             > (« Informations complémentaires » → « Exécuter quand même »).

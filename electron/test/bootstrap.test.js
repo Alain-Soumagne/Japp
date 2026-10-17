@@ -11,7 +11,7 @@ const UV = path.join(__dirname, '..', 'build', 'uv', 'uv.exe');
 
 test('crée un environnement, puis le réutilise sans le recréer', { timeout: 300_000 }, async (t) => {
   if (!fs.existsSync(UV)) return t.skip('uv.exe absent — lance `node scripts/fetch-uv.mjs`');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cours-boot-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'japp-boot-'));
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
   const req = path.join(tmp, 'requirements.txt');
@@ -37,7 +37,7 @@ test('crée un environnement, puis le réutilise sans le recréer', { timeout: 3
 });
 
 test('échoue clairement si uv est introuvable', async () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cours-boot-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'japp-boot-'));
   const req = path.join(tmp, 'r.txt');
   fs.writeFileSync(req, 'idna==3.10\n');
   await assert.rejects(

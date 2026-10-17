@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Se présenter en japonais</title>
+<style>
+:root{
+  --paper:#f4efe4; --paper2:#ebe4d3; --ink:#1d1b19; --muted:#6b645a; --line:#cfc6b2;
+  --red:#c8372d; --red-soft:#f0d6d0;
+  --serif:"Yu Mincho","Hiragino Mincho ProN","Noto Serif JP","MS PMincho",Georgia,serif;
+  --sans:"Yu Gothic","Hiragino Sans","Meiryo","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--paper);overflow:hidden;font-family:var(--sans)}
+html:fullscreen,html:fullscreen body{background:#1d1b19}   /* barres sombres seulement en plein écran */
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:var(--paper);color:var(--ink);overflow:hidden}
+.slide{position:absolute;inset:0;padding:100px 140px 110px;display:none}
+.slide.on{display:block;animation:in .4s ease both}
+@keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide.on{animation:none}}
+.kicker{font-size:26px;letter-spacing:.22em;text-transform:uppercase;color:var(--red);font-weight:600}
+h1,h2,h3{font-family:var(--serif);font-weight:700}
+h2{font-size:76px;line-height:1.1;margin:16px 0 40px}
+.foot{position:absolute;left:140px;right:140px;bottom:42px;display:flex;justify-content:space-between;font-size:22px;color:var(--muted)}
+/* cover */
+.cover .big{position:absolute;right:-60px;top:-120px;font-family:var(--serif);font-size:1180px;line-height:1;color:var(--paper2);font-weight:700}
+.cover .sun{position:absolute;right:210px;top:150px;width:320px;height:320px;border-radius:50%;background:var(--red)}
+.cover .kicker{position:absolute;left:140px;top:130px}
+.cover h1{position:absolute;left:140px;bottom:290px;font-size:112px;line-height:1.08;max-width:1400px}
+.cover .sub{position:absolute;left:140px;bottom:200px;font-size:38px;color:var(--muted);max-width:1300px}
+/* plan */
+.plan{display:grid;grid-template-columns:1fr 1fr;gap:0 110px}
+.plan div{display:flex;align-items:baseline;gap:28px;padding:22px 0;border-bottom:2px solid var(--line);font-size:38px;font-family:var(--serif)}
+.plan span{font-family:var(--sans);font-size:26px;color:var(--red);font-weight:700;width:46px;flex:none}
+/* section */
+.cols{display:grid;grid-template-columns:1.15fr 1fr;gap:90px}
+.cols.single{grid-template-columns:1fr}
+.pts{list-style:none}
+.pts li{font-size:34px;line-height:1.45;padding:16px 0 16px 44px;border-bottom:2px solid var(--line);position:relative}
+.pts li:before{content:"";position:absolute;left:0;top:30px;width:18px;height:18px;background:var(--red)}
+.exs .ex{padding:16px 0 18px;border-top:4px solid var(--ink);margin-bottom:12px}
+.exs .jp{font-family:var(--serif);font-size:50px;line-height:1.3}
+.exs .ro{font-size:25px;color:var(--muted);margin-top:4px}
+.exs .fr{font-size:30px;margin-top:6px}
+.exs h4{font-size:22px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;font-weight:600}
+/* todo */
+.todo{list-style:none}
+.todo li{font-size:34px;line-height:1.4;padding:16px 0 16px 58px;position:relative;border-bottom:2px solid var(--line)}
+.todo li:before{content:"";position:absolute;left:0;top:26px;width:26px;height:26px;border:3px solid var(--red)}
+/* end */
+.slide.on.end{display:grid;place-items:center;text-align:left}  /* .slide.on : sinon cette règle écrase display:none et la slide reste visible */
+.end .jp{font-family:var(--serif);font-size:150px;color:var(--red);font-weight:700}
+.end .fr{font-size:36px;color:var(--muted);margin-top:10px}
+#bar{position:fixed;left:0;bottom:0;height:5px;background:var(--red);width:0;transition:width .3s;z-index:5}
+#hint{position:fixed;right:18px;top:12px;font:14px var(--sans);color:#8f887a;z-index:5;transition:opacity 1s}
+@media print{
+  html,body{overflow:visible;background:#fff;height:auto}
+  #stage{position:static;transform:none!important;width:auto;height:auto;overflow:visible}
+  .slide{display:block!important;position:relative;width:1920px;height:1080px;page-break-after:always;animation:none}
+  #bar,#hint{display:none}
+  @page{size:1920px 1080px;margin:0}
+}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="bar"></div><div id="hint">← → · Espace · F plein écran</div>
+<script id="data" type="application/json">{"title": "Se présenter en japonais", "subtitle": "Salutations, は et です, la question en か", "sections": [{"title": "Les salutations de base", "key_points": ["こんにちは (konnichiwa) se dit en journée, おはようございます (ohayō gozaimasu) le matin et こんばんは (konbanwa) le soir.", "Le « は » de こんにちは et de こんばんは se prononce « wa » : c'est un reste de l'ancienne grammaire.", "ありがとうございます (arigatō gozaimasu) : merci, à la forme polie."], "examples": [{"japanese": "おはようございます。", "romaji": "Ohayō gozaimasu.", "french": "Bonjour (le matin)."}, {"japanese": "こんにちは。", "romaji": "Konnichiwa.", "french": "Bonjour (en journée)."}, {"japanese": "こんばんは。", "romaji": "Konbanwa.", "french": "Bonsoir."}]}, {"title": "Se présenter : 〜は 〜です", "key_points": ["は (wa) marque le thème de la phrase : ce dont on parle.", "です (desu) termine une phrase polie, à peu près comme le verbe « être ».", "On commence par はじめまして (hajimemashite) et on termine par どうぞよろしくおねがいします."], "examples": [{"japanese": "わたしは アレックスです。", "romaji": "Watashi wa Arekkusu desu.", "french": "Je suis Alex."}, {"japanese": "はじめまして。", "romaji": "Hajimemashite.", "french": "Enchanté (première rencontre)."}, {"japanese": "どうぞ よろしくおねがいします。", "romaji": "Dōzo yoroshiku onegaishimasu.", "french": "Ravi de faire votre connaissance."}]}, {"title": "Poser une question avec か", "key_points": ["On ajoute か (ka) à la fin de la phrase : pas besoin de point d'interrogation en japonais.", "Pour répondre : はい (hai) pour oui, いいえ (iie) pour non.", "Le négatif poli se forme avec 〜じゃありません."], "examples": [{"japanese": "おなまえは なんですか。", "romaji": "Onamae wa nan desu ka.", "french": "Quel est votre nom ?"}, {"japanese": "がくせいですか。", "romaji": "Gakusei desu ka.", "french": "Êtes-vous étudiant ?"}, {"japanese": "はい、がくせいです。", "romaji": "Hai, gakusei desu.", "french": "Oui, je suis étudiant."}, {"japanese": "いいえ、がくせいじゃありません。", "romaji": "Iie, gakusei ja arimasen.", "french": "Non, je ne suis pas étudiant."}]}, {"title": "Les hiragana de la ligne あ", "key_points": ["Cinq voyelles : あ (a), い (i), う (u), え (e), お (o).", "On apprend d'abord à les lire ; l'écriture peut attendre."], "examples": [{"japanese": "あい", "romaji": "ai", "french": "l'amour"}, {"japanese": "いえ", "romaji": "ie", "french": "la maison"}, {"japanese": "うえ", "romaji": "ue", "french": "le dessus"}]}], "homework": ["Apprendre à lire les lignes あ et か.", "Se présenter à voix haute en trois phrases (shadowing).", "Refaire les exemples du cours sans regarder le texte.", "Poser tes questions au professeur avant le prochain cours."], "course_label": "Exemple généré par Japp"}</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const stage = document.getElementById('stage');
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const chunk = (a, n) => { const r = []; for (let i = 0; i < a.length; i += n) r.push(a.slice(i, i + n)); return r.length ? r : [[]]; };
+const slides = [];
+const add = (node, label) => { node.classList.add('slide'); node.dataset.label = label || ''; stage.appendChild(node); slides.push(node); return node; };
+
+// 1. couverture
+{ const s = el('section', 'cover');
+  s.append(el('div', 'big', '学'), el('div', 'sun'), el('div', 'kicker', D.course_label || 'Synthèse de cours'),
+           el('h1', '', D.title), el('div', 'sub', D.subtitle || ''));
+  add(s, 'Titre'); }
+
+// 2. plan
+if (D.sections.length > 1) { const s = el('section'); s.append(el('div', 'kicker', 'Au programme'), el('h2', '', D.sections.length + ' notions'));
+  const g = el('div', 'plan'); D.sections.forEach((x, i) => { const d = el('div'); d.append(el('span', '', String(i + 1).padStart(2, '0')), document.createTextNode(x.title)); g.appendChild(d); });
+  s.appendChild(g); add(s, 'Plan'); }
+
+// 3. sections
+D.sections.forEach((sec, i) => {
+  const kp = chunk(sec.key_points, 4), ex = chunk(sec.examples, 3);
+  const n = Math.max(kp.length, ex.length);
+  for (let p = 0; p < n; p++) {
+    const s = el('section'); const hasEx = ex[p] && ex[p].length, hasKp = kp[p] && kp[p].length;
+    s.append(el('div', 'kicker', String(i + 1).padStart(2, '0') + ' · ' + (n > 1 ? `Partie ${p + 1}/${n}` : 'Notion')), el('h2', '', sec.title));
+    const cols = el('div', 'cols' + (hasEx && hasKp ? '' : ' single'));
+    if (hasKp) { const ul = el('ul', 'pts'); kp[p].forEach(t => ul.appendChild(el('li', '', t))); cols.appendChild(ul); }
+    if (hasEx) { const w = el('div', 'exs'); w.appendChild(el('h4', '', 'Exemples du cours'));
+      ex[p].forEach(e => { const d = el('div', 'ex'); d.append(el('div', 'jp', e.japanese), el('div', 'ro', e.romaji), el('div', 'fr', e.french)); w.appendChild(d); });
+      cols.appendChild(w); }
+    s.appendChild(cols); add(s, sec.title);
+  }
+});
+
+// 4. devoirs
+if (D.homework && D.homework.length) chunk(D.homework, 6).forEach((hw, p, all) => {
+  const s = el('section'); s.append(el('div', 'kicker', 'Devoirs et conseils'), el('h2', '', all.length > 1 ? `À faire (${p + 1}/${all.length})` : 'À faire'));
+  const ul = el('ul', 'todo'); hw.forEach(t => ul.appendChild(el('li', '', t))); s.appendChild(ul); add(s, 'Devoirs'); });
+
+// 5. fin
+{ const s = el('section', 'end'); const d = el('div'); d.append(el('div', 'jp', '頑張って'), el('div', 'fr', 'Bon courage !')); s.appendChild(d); add(s, 'Fin'); }
+
+// pied de page + ajustement auto de la taille du texte
+slides.forEach((s, i) => { if (i) { const f = el('div', 'foot'); f.append(el('span', '', D.title), el('span', '', `${i + 1} / ${slides.length}`)); s.appendChild(f); } });
+function shrink(s) { let k = 0; const limit = () => [...s.querySelectorAll('.pts,.exs,.todo,.plan')].some(n => n.getBoundingClientRect().bottom - stage.getBoundingClientRect().top > 1000 * (stageScale()));
+  while (limit() && k < 8) { s.style.fontSize = (100 - 6 * ++k) + '%'; s.querySelectorAll('li,.jp,.ro,.fr').forEach(n => { n.style.zoom = (1 - 0.06 * k); }); } }
+function stageScale() { return stage.getBoundingClientRect().width / 1920; }
+
+const KEY = 'deck-' + (D.title || '').slice(0, 40);
+const store = { get: () => { try { return localStorage.getItem(KEY); } catch (e) { return null; } }, set: v => { try { localStorage.setItem(KEY, v); } catch (e) { /* iframe isolée */ } } };
+let i = Math.min(+store.get() || 0, slides.length - 1);
+function fit() { const s = Math.min(innerWidth / 1920, innerHeight / 1080); stage.style.transform = `translate(-50%,-50%) scale(${s})`; }
+function show(n) { i = Math.max(0, Math.min(slides.length - 1, n)); store.set(i);
+  slides.forEach((s, k) => s.classList.toggle('on', k === i)); document.getElementById('bar').style.width = ((i + 1) / slides.length * 100) + '%'; }
+addEventListener('keydown', e => {
+  if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+  else if (e.key === 'Home') show(0); else if (e.key === 'End') show(slides.length - 1);
+  else if (e.key.toLowerCase() === 'f') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } });
+addEventListener('click', e => show(e.clientX > innerWidth / 2 ? i + 1 : i - 1));
+let tx = 0; addEventListener('touchstart', e => tx = e.touches[0].clientX);
+addEventListener('touchend', e => { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) show(i + (d < 0 ? 1 : -1)); });
+addEventListener('resize', fit); fit();
+slides.forEach(s => { s.classList.add('on'); shrink(s); s.classList.remove('on'); });
+show(i);
+setTimeout(() => { document.getElementById('hint').style.opacity = 0; }, 6000);   // l'aide de navigation s'efface
+</script>
+</body>
+</html>

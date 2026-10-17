@@ -7,6 +7,10 @@ updates:
   - package-ecosystem: npm
     directory: /frontend
     schedule: { interval: weekly }
+    ignore:
+      # Angular impose TypeScript 6.x : ne pas proposer la 7
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
     open-pull-requests-limit: 5
   - package-ecosystem: npm
     directory: /electron

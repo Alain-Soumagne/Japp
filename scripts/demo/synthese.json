@@ -1,0 +1,122 @@
+{
+  "title": "Se présenter en japonais",
+  "subtitle": "Salutations, は et です, la question en か",
+  "course": "Exemple",
+  "model": "gemma4:12b",
+  "stats": {
+    "examples_total": 13,
+    "examples_kept": 13
+  },
+  "sections": [
+    {
+      "title": "Les salutations de base",
+      "key_points": [
+        "こんにちは (konnichiwa) se dit en journée, おはようございます (ohayō gozaimasu) le matin et こんばんは (konbanwa) le soir.",
+        "Le « は » de こんにちは et de こんばんは se prononce « wa » : c'est un reste de l'ancienne grammaire.",
+        "ありがとうございます (arigatō gozaimasu) : merci, à la forme polie."
+      ],
+      "examples": [
+        {
+          "japanese": "おはようございます。",
+          "romaji": "Ohayō gozaimasu.",
+          "french": "Bonjour (le matin)."
+        },
+        {
+          "japanese": "こんにちは。",
+          "romaji": "Konnichiwa.",
+          "french": "Bonjour (en journée)."
+        },
+        {
+          "japanese": "こんばんは。",
+          "romaji": "Konbanwa.",
+          "french": "Bonsoir."
+        }
+      ]
+    },
+    {
+      "title": "Se présenter : 〜は 〜です",
+      "key_points": [
+        "は (wa) marque le thème de la phrase : ce dont on parle.",
+        "です (desu) termine une phrase polie, à peu près comme le verbe « être ».",
+        "On commence par はじめまして (hajimemashite) et on termine par どうぞよろしくおねがいします."
+      ],
+      "examples": [
+        {
+          "japanese": "わたしは アレックスです。",
+          "romaji": "Watashi wa Arekkusu desu.",
+          "french": "Je suis Alex."
+        },
+        {
+          "japanese": "はじめまして。",
+          "romaji": "Hajimemashite.",
+          "french": "Enchanté (première rencontre)."
+        },
+        {
+          "japanese": "どうぞ よろしくおねがいします。",
+          "romaji": "Dōzo yoroshiku onegaishimasu.",
+          "french": "Ravi de faire votre connaissance."
+        }
+      ]
+    },
+    {
+      "title": "Poser une question avec か",
+      "key_points": [
+        "On ajoute か (ka) à la fin de la phrase : pas besoin de point d'interrogation en japonais.",
+        "Pour répondre : はい (hai) pour oui, いいえ (iie) pour non.",
+        "Le négatif poli se forme avec 〜じゃありません."
+      ],
+      "examples": [
+        {
+          "japanese": "おなまえは なんですか。",
+          "romaji": "Onamae wa nan desu ka.",
+          "french": "Quel est votre nom ?"
+        },
+        {
+          "japanese": "がくせいですか。",
+          "romaji": "Gakusei desu ka.",
+          "french": "Êtes-vous étudiant ?"
+        },
+        {
+          "japanese": "はい、がくせいです。",
+          "romaji": "Hai, gakusei desu.",
+          "french": "Oui, je suis étudiant."
+        },
+        {
+          "japanese": "いいえ、がくせいじゃありません。",
+          "romaji": "Iie, gakusei ja arimasen.",
+          "french": "Non, je ne suis pas étudiant."
+        }
+      ]
+    },
+    {
+      "title": "Les hiragana de la ligne あ",
+      "key_points": [
+        "Cinq voyelles : あ (a), い (i), う (u), え (e), お (o).",
+        "On apprend d'abord à les lire ; l'écriture peut attendre."
+      ],
+      "examples": [
+        {
+          "japanese": "あい",
+          "romaji": "ai",
+          "french": "l'amour"
+        },
+        {
+          "japanese": "いえ",
+          "romaji": "ie",
+          "french": "la maison"
+        },
+        {
+          "japanese": "うえ",
+          "romaji": "ue",
+          "french": "le dessus"
+        }
+      ]
+    }
+  ],
+  "homework": [
+    "Apprendre à lire les lignes あ et か.",
+    "Se présenter à voix haute en trois phrases (shadowing).",
+    "Refaire les exemples du cours sans regarder le texte.",
+    "Poser tes questions au professeur avant le prochain cours."
+  ]
+}

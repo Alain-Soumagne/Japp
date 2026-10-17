@@ -21,7 +21,7 @@ def client():
 
 
 def test_tests_use_isolated_data_dir():
-    assert "cours-test-" in str(DATA_DIR)
+    assert "japp-test-" in str(DATA_DIR)
 
 
 def test_health_has_no_secrets(client):

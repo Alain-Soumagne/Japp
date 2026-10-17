@@ -16,13 +16,17 @@ function pythonPath(envDir) {
   return path.join(envDir, 'Scripts', 'python.exe');
 }
 
+const MARKER = '.japp-env.json';
+const LEGACY_MARKER = '.cours-env.json';      // v0.1.0 (ancien nom « Cours ») : l'environnement reste valide
+
 function isReady(envDir, requirementsPath) {
-  try {
-    const marker = JSON.parse(fs.readFileSync(path.join(envDir, '.cours-env.json'), 'utf8'));
-    return marker.requirements === sha256(requirementsPath) && fs.existsSync(pythonPath(envDir));
-  } catch {
-    return false;
+  for (const name of [MARKER, LEGACY_MARKER]) {
+    try {
+      const marker = JSON.parse(fs.readFileSync(path.join(envDir, name), 'utf8'));
+      if (marker.requirements === sha256(requirementsPath) && fs.existsSync(pythonPath(envDir))) return true;
+    } catch { /* marqueur absent ou illisible */ }
   }
+  return false;
 }
 
 function run(cmd, args, { env, onLine, cwd }) {
@@ -85,7 +89,7 @@ async function ensureEnv({ uvPath, requirementsPath, envDir, cacheDir, onStatus,
     },
   });
 
-  fs.writeFileSync(path.join(envDir, '.cours-env.json'),
+  fs.writeFileSync(path.join(envDir, MARKER),
     JSON.stringify({ requirements: sha256(requirementsPath), python: PYTHON_VERSION, created: new Date().toISOString() }));
   fs.rmSync(cacheDir, { recursive: true, force: true });   // libère ~3 Go de cache de téléchargement
   onStatus('Environnement prêt.', 100);
