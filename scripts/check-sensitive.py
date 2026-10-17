@@ -45,6 +45,9 @@ def tracked_files() -> list[str]:
 
 
 def main() -> int:
+    # Console Windows (cp1252) : sans ceci, l'affichage de « ✔ » / « ⚠ » fait planter le script.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     problems: list[str] = []
     files = tracked_files()
     for rel in files:
