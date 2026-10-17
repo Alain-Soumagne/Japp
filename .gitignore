@@ -1,0 +1,51 @@
+# ───── Données personnelles : NE JAMAIS publier ─────
+# Transcriptions, synthèses, présentations générées, audios/vidéos de cours, journaux
+data/
+*.m4a
+*.mp3
+*.wav
+*.flac
+*.ogg
+*.opus
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.webm
+*.srt
+*.log
+
+# ───── Secrets / certificats ─────
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+*.cer
+*.snk
+secrets/
+
+# ───── Environnements et caches ─────
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ───── Builds ─────
+node_modules/
+frontend/dist/
+frontend/.angular/
+electron/dist/
+electron/build/*
+!electron/build/icon.png
+
+# ───── Système / éditeurs ─────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.swp

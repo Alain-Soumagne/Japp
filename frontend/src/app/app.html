@@ -1,0 +1,82 @@
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><span class="mark">学</span><div><strong>Cours</strong><small>transcription locale</small></div></div>
+
+    <button class="new" (click)="api.selectedId.set(null)">＋ Nouveau cours</button>
+
+    <ul class="jobs">
+      @for (j of api.jobs(); track j.id) {
+        <li [class.on]="j.id === api.selectedId()" (click)="select(j)">
+          <span class="name">{{ j.name }}</span>
+          <span class="st" [attr.data-s]="j.status">{{ statusLabel(j) }}</span>
+          @if (j.status === 'running' || j.status === 'queued') {
+            <span class="mini"><span [style.width.%]="j.progress * 100"></span></span>
+          }
+        </li>
+      } @empty {
+        <li class="empty">Aucun cours pour l'instant.</li>
+      }
+    </ul>
+
+    <footer class="sys">
+      @if (api.health(); as h) {
+        <div><i [class.ok]="!!h.gpu.name"></i>{{ h.gpu.name ?? 'Pas de GPU' }}
+          @if (h.gpu.vram_total_mb) { <small>{{ (h.gpu.vram_used_mb! / 1024).toFixed(1) }} / {{ (h.gpu.vram_total_mb / 1024).toFixed(0) }} Go</small> }
+        </div>
+        <div><i [class.ok]="h.ollama.running"></i>Ollama {{ h.ollama.running ? 'actif' : 'arrêté (démarrage auto)' }}</div>
+      } @else {
+        <div><i></i>Démarrage du moteur…</div>
+      }
+    </footer>
+  </aside>
+
+  <main class="main">
+    @if (warning()) {
+      <div class="warn">{{ warning() }}
+        @if (needsOllama()) { <button class="link" (click)="getOllama()">Télécharger Ollama ↗</button> }
+      </div>
+    }
+
+    @if (api.selected(); as j) {
+      <app-job-view [job]="j" />
+    } @else {
+      <section class="new-job">
+        <p class="kicker">Nouveau cours</p>
+        <h1>Dépose un enregistrement,<br>récupère une présentation.</h1>
+
+        <label class="drop" [class.over]="over()"
+               (dragover)="dragState(true, $event)" (dragleave)="dragState(false, $event)" (drop)="onDrop($event)">
+          <input type="file" multiple accept="audio/*,video/*,.m4a,.mp3,.wav,.mp4,.mkv,.webm,.flac,.ogg" (change)="onPick($event)" hidden />
+          <span class="big">音</span>
+          <strong>Glisse tes fichiers audio ou vidéo ici</strong>
+          <span>ou clique pour choisir · tout reste sur ta machine</span>
+        </label>
+
+        @if (error()) { <p class="err">{{ error() }}</p> }
+
+        <div class="opts">
+          <label>Langue du cours
+            <select (change)="setLang($event)">
+              @for (l of langs; track l.id) { <option [value]="l.id" [selected]="l.id === lang()">{{ l.label }}</option> }
+            </select>
+          </label>
+          <label>Modèle de synthèse
+            <select (change)="setModel($event)">
+              <option value="">Par défaut ({{ api.health()?.llm_default }})</option>
+              @for (m of models(); track m) {
+                <option [value]="m" [selected]="m === model()">{{ m }}{{ installed().has(m) ? '' : ' (à télécharger)' }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <button class="link" (click)="showOptions.set(!showOptions())">{{ showOptions() ? '− Masquer' : '＋ Vocabulaire du cours (optionnel)' }}</button>
+        @if (showOptions()) {
+          <label class="vocab">Mots ou noms à reconnaître (aide Whisper)
+            <textarea rows="3" [value]="prompt()" (input)="setPrompt($event)"
+                      placeholder="Ex : particule を, adjectifs en い et en な, Naruto, Sakura, hiragana…"></textarea>
+          </label>
+        }
+      </section>
+    }
+  </main>
+</div>

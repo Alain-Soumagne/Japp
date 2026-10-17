@@ -1,0 +1,116 @@
+name: Release
+
+# Déclenché en poussant un tag de version, ex. :  git tag v0.1.0 && git push origin v0.1.0
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Construire l'installateur Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write       # attestation de provenance
+      attestations: write
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'   # pas de signature de code (voir docs/RELEASING.md pour l'activer)
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            electron/package-lock.json
+
+      - name: Vérifier que le tag correspond à la version de l'application
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'.TrimStart('v')
+          $ver = (Get-Content electron/package.json -Raw | ConvertFrom-Json).version
+          if ($tag -ne $ver) { Write-Error "Le tag ($tag) ne correspond pas à electron/package.json ($ver)"; exit 1 }
+
+      - name: Vérifier l'absence de données sensibles
+        shell: pwsh
+        run: python scripts/check-sensitive.py
+
+      - name: Compiler l'interface Angular
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Construire l'installateur (NSIS)
+        working-directory: electron
+        run: |
+          npm ci
+          npm run dist
+
+      - name: Sommes de contrôle SHA-256
+        shell: pwsh
+        working-directory: electron/dist
+        run: |
+          Get-ChildItem Cours-Setup-*.exe | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$h *$($_.Name)" | Out-File -Encoding ascii -Append SHA256SUMS.txt
+          }
+          Get-Content SHA256SUMS.txt
+
+      - name: Attestation de provenance (SLSA)
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: electron/dist/Cours-Setup-*.exe
+
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: installateur-windows
+          path: |
+            electron/dist/Cours-Setup-*.exe
+            electron/dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publier la release GitHub
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write        # seule étape autorisée à écrire sur le dépôt
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: installateur-windows
+          path: release
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: |
+            release/Cours-Setup-*.exe
+            release/SHA256SUMS.txt
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body: |
+            ## Installation
+            1. Installe [Ollama](https://ollama.com/download) (pour la synthèse).
+            2. Télécharge **Cours-Setup-*.exe** ci-dessous et lance-le.
+            3. Au premier démarrage, l'application prépare son environnement Python (~3 Go, quelques minutes, internet requis).
+
+            Prérequis détaillés et dépannage : voir le [README](https://github.com/${{ github.repository }}#readme).
+
+            ### Vérifier le fichier
+            ```powershell
+            Get-FileHash .\Cours-Setup-*.exe -Algorithm SHA256   # à comparer avec SHA256SUMS.txt
+            gh attestation verify .\Cours-Setup-*.exe --repo ${{ github.repository }}
+            ```
+            > L'installateur n'est pas signé numériquement : Windows SmartScreen peut afficher un avertissement
+            > (« Informations complémentaires » → « Exécuter quand même »).

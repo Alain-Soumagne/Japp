@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Cours</title>
+<style>
+  body{margin:0;height:100vh;display:grid;place-items:center;background:#1d1b19;color:#e9e3d3;font-family:'Yu Gothic UI','Segoe UI',sans-serif}
+  .box{width:min(560px,86vw);text-align:center}
+  .mark{width:84px;height:84px;margin:0 auto 22px;background:#c8372d;color:#fff;font:700 52px/84px 'Yu Mincho',serif}
+  h1{font:700 26px 'Yu Mincho',serif;margin:0}
+  p{color:#a39c8c;margin:12px 0 0;font-size:14px;min-height:2.8em;line-height:1.4}
+  .bar{height:6px;background:#34312c;margin-top:20px;display:none}
+  .bar i{display:block;height:100%;width:0;background:#c8372d;transition:width .3s}
+  small{display:block;margin-top:18px;color:#6b645a;font-size:12px}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="mark">学</div>
+  <h1>Cours</h1>
+  <p id="t">Démarrage du moteur local…</p>
+  <div class="bar" id="b"><i id="f"></i></div>
+  <small id="s"></small>
+</div>
+<script>
+  window.setStatus = (text, pct, hint) => {
+    document.getElementById('t').textContent = text;
+    const b = document.getElementById('b');
+    if (pct == null) { b.style.display = 'none'; } else { b.style.display = 'block'; document.getElementById('f').style.width = pct + '%'; }
+    document.getElementById('s').textContent = hint || '';
+  };
+</script>
+</body>
+</html>

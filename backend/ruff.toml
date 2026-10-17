@@ -1,0 +1,10 @@
+line-length = 130
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "B", "S", "UP"]
+# S310 : les URL ouvertes viennent de config.OLLAMA_URL, dont le schéma est validé (http/https).
+ignore = ["E501", "E702", "E741", "B905", "S101", "S110", "S112", "S310", "S404", "S603", "S607", "B008"]
+
+[lint.per-file-ignores]
+"tests/*" = ["S"]

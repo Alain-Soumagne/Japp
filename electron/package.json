@@ -1,0 +1,91 @@
+{
+  "name": "cours-transcriber",
+  "version": "0.1.0",
+  "description": "Transcription locale de cours (Whisper), synthèse (Ollama) et présentation HTML — 100 % hors ligne",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "prepare:resources": "node scripts/fetch-uv.mjs && node scripts/prepare-resources.mjs",
+    "dist": "npm run prepare:resources && electron-builder --win nsis --x64 --publish never",
+    "dist:dir": "npm run prepare:resources && electron-builder --win dir --x64 --publish never",
+    "test": "node --test",
+    "check": "node --check main.js && node --check preload.js && node --check bootstrap.js"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "26.15.3"
+  },
+  "productName": "Cours",
+  "private": true,
+  "license": "MIT",
+  "author": "Cours contributors",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0"
+  },
+  "build": {
+    "appId": "io.github.cours-transcriber",
+    "productName": "Cours",
+    "copyright": "MIT License",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "bootstrap.js",
+      "splash.html",
+      "build/icon.png",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/frontend",
+        "to": "frontend"
+      },
+      {
+        "from": "build/backend",
+        "to": "backend"
+      },
+      {
+        "from": "build/requirements.txt",
+        "to": "requirements.txt"
+      },
+      {
+        "from": "build/uv",
+        "to": "uv"
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "Cours-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "Cours",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "electronLanguages": [
+      "fr",
+      "en-US"
+    ]
+  },
+  "allowScripts": {
+    "electron-winstaller": false
+  }
+}

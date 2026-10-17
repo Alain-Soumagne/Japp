@@ -1,0 +1,5 @@
+"""Isole les tests : le dossier de données est un répertoire temporaire, défini avant tout import de l'application."""
+import os
+import tempfile
+
+os.environ["COURS_DATA_DIR"] = tempfile.mkdtemp(prefix="cours-test-")
