@@ -6,6 +6,7 @@ export interface Job {
   id: string;
   name: string;
   source: string;
+  url?: string;
   lang: string;
   model: string;
   prompt: string;
@@ -92,6 +93,14 @@ export class ApiService {
       fd.append('prompt', opts.prompt);
       job = await firstValueFrom(this.http.post<Job>(`${this.base}/jobs`, fd));
     }
+    await this.refresh();
+    this.selectedId.set(job.id);
+    return job;
+  }
+
+  /** Lien YouTube (public ou non répertorié) : le moteur télécharge l'audio puis lance le pipeline. */
+  async addYoutube(url: string, opts: NewJobOptions): Promise<Job> {
+    const job = await firstValueFrom(this.http.post<Job>(`${this.base}/jobs/youtube`, { url, ...opts }));
     await this.refresh();
     this.selectedId.set(job.id);
     return job;

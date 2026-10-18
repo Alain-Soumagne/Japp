@@ -61,6 +61,30 @@ export class App {
     }
   }
 
+  readonly ytUrl = signal('');
+  readonly ytBusy = signal(false);
+
+  setYt(ev: Event): void {
+    this.ytUrl.set((ev.target as HTMLInputElement).value);
+  }
+
+  async addYoutube(ev?: Event): Promise<void> {
+    ev?.preventDefault();
+    const url = this.ytUrl().trim();
+    if (!url || this.ytBusy()) return;
+    this.error.set('');
+    this.ytBusy.set(true);
+    try {
+      await this.api.addYoutube(url, { lang: this.lang(), model: this.model(), prompt: this.prompt() });
+      this.ytUrl.set('');
+    } catch (e) {
+      const d = (e as { error?: { detail?: string } }).error?.detail;
+      this.error.set(typeof d === 'string' ? d : `Impossible d'ajouter ce lien : ${(e as Error).message}`);
+    } finally {
+      this.ytBusy.set(false);
+    }
+  }
+
   readonly needsOllama = computed(() => !!this.api.health() && !this.api.health()!.ollama.installed);
 
   getOllama(): void {

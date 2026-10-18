@@ -52,6 +52,15 @@
           <span>ou clique pour choisir · tout reste sur ta machine</span>
         </label>
 
+        <form class="yt" (submit)="addYoutube($event)">
+          <label for="yt">ou colle un lien YouTube <small>(vidéo publique ou non répertoriée)</small></label>
+          <div>
+            <input id="yt" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://www.youtube.com/watch?v=…"
+                   [value]="ytUrl()" (input)="setYt($event)" />
+            <button type="submit" [disabled]="!ytUrl().trim() || ytBusy()">{{ ytBusy() ? 'Ajout…' : 'Importer' }}</button>
+          </div>
+        </form>
+
         @if (error()) { <p class="err">{{ error() }}</p> }
 
         <div class="opts">

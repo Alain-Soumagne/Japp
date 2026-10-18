@@ -77,11 +77,12 @@ Pour gagner du temps, tu peux le préparer à l'avance dans un terminal : `ollam
 1. Ouvre **Japp**.
 2. **Glisse ton fichier** (ou plusieurs) dans la zone centrale, ou clique pour le choisir.
    Formats : mp3, m4a, wav, flac, ogg, opus, mp4, mkv, mov, webm, avi…
+   **Ou colle un lien YouTube** (vidéo *publique* ou *non répertoriée*) dans le champ situé sous la zone de dépôt, puis clique sur *Importer* : Japp télécharge uniquement l'audio, le transcrit, puis le supprime. Les vidéos privées, réservées aux membres, les playlists et les chaînes ne sont pas encore prises en charge.
 3. Avant de déposer, règle si besoin :
    - **Langue du cours** — *Français* si le cours est en français avec des mots japonais (ils seront écrits en romaji) ; *Japonais* si tout est en japonais ; *Automatique* sinon.
    - **Modèle de synthèse** — `gemma4:12b` par défaut.
    - **Vocabulaire** (optionnel) — noms propres, termes techniques : aide Whisper à les reconnaître.
-4. Suis la progression : transcription → modèle IA → synthèse → présentation. Une heure de cours demande quelques minutes sur une RTX récente (19 min d'audio ≈ 2 min sur RTX 5080).
+4. Suis la progression : (téléchargement si lien YouTube →) transcription → modèle IA → synthèse → présentation. Une heure de cours demande quelques minutes sur une RTX récente (19 min d'audio ≈ 2 min sur RTX 5080).
 5. Récupère le résultat dans les onglets :
    - **Présentation** — flèches ← → ou clic pour naviguer, `F` pour le plein écran, bouton « Ouvrir en grand ».
    - **Transcription** — corrige les erreurs, puis *Enregistrer et régénérer la synthèse* (sans retranscrire).
@@ -109,6 +110,7 @@ Le bouton **Supprimer** efface un cours et tous ses fichiers.
 ## 4. Confidentialité
 
 - Les enregistrements, transcriptions et synthèses **ne quittent jamais ta machine**. Pas de télémétrie, pas de compte.
+- Si tu importes un **lien YouTube**, Japp contacte YouTube pour récupérer l'audio de cette vidéo (sans cookie ni compte). Respecte les conditions d'utilisation de YouTube et les droits d'auteur : n'importe que des vidéos dont tu as le droit de te servir.
 - L'application ne se connecte à internet que pour **télécharger** : Python et ses bibliothèques (GitHub, PyPI), le modèle Whisper (Hugging Face), les modèles de synthèse (Ollama).
 - Le moteur local n'écoute que sur `127.0.0.1` ; voir [SECURITY.md](SECURITY.md) pour le détail des protections.
 - Les fichiers ne sont pas chiffrés : quiconque ouvre ta session Windows peut les lire.

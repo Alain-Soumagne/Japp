@@ -13,8 +13,8 @@ from .config import JOBS_DIR, LLM_MODEL
 from .deck import render_deck
 
 # Poids de chaque étape dans la progression globale
-STAGES = [("transcribing", 0.45), ("preparing_llm", 0.05), ("summarizing", 0.42), ("rendering", 0.08)]
-LABELS = {"queued": "En attente", "transcribing": "Transcription", "preparing_llm": "Préparation du modèle de synthèse",
+STAGES = [("downloading", 0.08), ("transcribing", 0.42), ("preparing_llm", 0.05), ("summarizing", 0.38), ("rendering", 0.07)]
+LABELS = {"queued": "En attente", "downloading": "Téléchargement YouTube", "transcribing": "Transcription", "preparing_llm": "Préparation du modèle de synthèse",
           "summarizing": "Synthèse", "rendering": "Création de la présentation", "done": "Terminé", "error": "Erreur"}
 
 _jobs: dict[str, dict] = {}
@@ -85,6 +85,21 @@ def create(source_path: Path, name: str, lang: str, model: str, prompt: str, cop
     return job
 
 
+def create_youtube(url: str, lang: str, model: str, prompt: str) -> dict:
+    """Tâche dont la source est une vidéo YouTube : l'audio est téléchargé par le worker (étape « downloading »)."""
+    from .youtube import canonical_url, video_id
+    vid = video_id(url)                      # valide et normalise (lève YoutubeError)
+    job_id = uuid.uuid4().hex[:10]
+    _dir(job_id).mkdir(parents=True)
+    job = {"id": job_id, "name": f"YouTube {vid}", "source": "", "url": canonical_url(vid), "lang": lang or "auto",
+           "model": model or LLM_MODEL, "prompt": prompt or "", "status": "queued", "stage": "queued", "progress": 0.0,
+           "message": LABELS["queued"], "error": None, "created": time.time(), "updated": time.time(), "files": [], "info": {}}
+    _jobs[job_id] = job
+    _save(job)
+    _q.put(("full", job_id))
+    return job
+
+
 def resummarize(job_id: str, model: str | None = None) -> dict:
     job = _jobs[job_id]
     if model:
@@ -138,12 +153,20 @@ def _worker() -> None:
             _set(job, status="running", error=None)
             d = _dir(job_id)
             if kind == "full":
+                if job.get("url") and not (job["source"] and Path(job["source"]).exists()):
+                    from .youtube import download_audio
+                    _progress(job, "downloading", 0.0, "Connexion à YouTube…")
+                    _save(job)
+                    path, meta = download_audio(job["url"], d, lambda f, m, job=job: _progress(job, "downloading", f, m))
+                    job.update(source=str(path), name=meta["title"])
                 from .transcribe import transcribe
                 def on_progress(f, m, job=job):
                     _progress(job, "transcribing", f, m)
 
                 res = transcribe(job["source"], d / "transcript", job["lang"], job["prompt"] or None, on_progress)
                 job["info"] = {"language": res["language"], "duration": res["duration"]}
+                if job.get("url"):                       # l'audio téléchargé n'est pas conservé
+                    Path(job["source"]).unlink(missing_ok=True)
             _run_summary(job)
             _set(job, status="done", stage="done", progress=1.0, message=LABELS["done"], files=files(job_id))
         except Exception as e:  # noqa: BLE001

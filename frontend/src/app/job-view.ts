@@ -14,6 +14,7 @@ interface Summary {
 }
 
 const STAGES: { id: string; label: string }[] = [
+  { id: 'downloading', label: 'Téléchargement' },
   { id: 'transcribing', label: 'Transcription' },
   { id: 'preparing_llm', label: 'Modèle IA' },
   { id: 'summarizing', label: 'Synthèse' },
@@ -39,7 +40,7 @@ const STAGES: { id: string; label: string }[] = [
     @if (j.status === 'queued' || j.status === 'running') {
       <section class="progress">
         <ol class="steps">
-          @for (s of stages; track s.id) {
+          @for (s of stagesOf(j); track s.id) {
             <li [class.active]="j.stage === s.id" [class.done]="stageIndex(j.stage) > $index">{{ s.label }}</li>
           }
         </ol>
@@ -155,7 +156,9 @@ export class JobView {
   readonly api = inject(ApiService);
   private sanitizer = inject(DomSanitizer);
   readonly job = input.required<Job>();
-  readonly stages = STAGES;
+  stagesOf(j: Job) {
+    return j.url ? STAGES : STAGES.filter((s) => s.id !== 'downloading');
+  }
 
   readonly tab = signal<Tab>('deck');
   readonly text = signal('');
@@ -209,7 +212,7 @@ export class JobView {
   }
 
   stageIndex(stage: string): number {
-    return STAGES.findIndex((s) => s.id === stage);
+    return this.stagesOf(this.job()).findIndex((s) => s.id === stage);
   }
 
   onEdit(e: Event): void {

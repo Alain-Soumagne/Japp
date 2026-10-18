@@ -40,3 +40,13 @@ label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); font-weig
 select, textarea { font: 15px var(--sans); padding: 10px 12px; border: 1px solid var(--ink); background: var(--card); color: var(--ink); }
 .vocab { margin-top: 12px; }
 .link { background: none; border: 0; color: var(--red); font: 600 14px var(--sans); cursor: pointer; padding: 8px 0; }
+
+.yt { margin: 18px 0 4px; display: grid; gap: 6px; }
+.yt label { font-weight: 600; font-size: 14px; }
+.yt small { font-weight: 400; color: var(--muted); }
+.yt div { display: flex; gap: 8px; }
+.yt input { flex: 1; min-width: 0; padding: 11px 12px; border: 1.5px solid var(--ink); background: var(--card); font: inherit; }
+.yt input:focus { outline: 3px solid var(--red); outline-offset: 1px; }
+.yt button { padding: 0 20px; border: 0; background: var(--ink); color: #fff; font: 700 15px var(--sans); cursor: pointer; }
+.yt button:hover:not(:disabled) { background: var(--red); }
+.yt button:disabled { opacity: .45; cursor: not-allowed; }

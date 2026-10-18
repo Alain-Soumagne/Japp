@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import jobs, ollama_mgr
+from .youtube import YoutubeError
 from .config import JOBS_DIR, LLM_CHOICES, LLM_MODEL, WHISPER_MODEL
 
 @asynccontextmanager
@@ -112,6 +113,22 @@ def create_from_path(body: FromPath) -> dict:
     if not p.is_file():
         raise HTTPException(404, "Fichier introuvable")
     return jobs.create(p.resolve(), p.stem, lang, model, prompt, copy=False)
+
+
+class FromYoutube(BaseModel):
+    url: str = Field(max_length=300)
+    lang: str = "auto"
+    model: str = ""
+    prompt: str = ""
+
+
+@app.post("/jobs/youtube")
+def create_from_youtube(body: FromYoutube) -> dict:
+    lang, model, prompt = _check_options(body.lang, body.model, body.prompt)
+    try:
+        return jobs.create_youtube(body.url, lang, model, prompt)
+    except YoutubeError as e:
+        raise HTTPException(422, str(e)) from e
 
 
 @app.post("/jobs")
