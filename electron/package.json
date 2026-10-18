@@ -1,6 +1,6 @@
 {
   "name": "japp",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Transcription locale de cours (Whisper), synthèse (Ollama) et présentation HTML — 100 % hors ligne",
   "main": "main.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "dist": "npm run prepare:resources && electron-builder --win nsis --x64 --publish never",
     "dist:dir": "npm run prepare:resources && electron-builder --win dir --x64 --publish never",
     "test": "node --test",
-    "check": "node --check main.js && node --check preload.js && node --check bootstrap.js"
+    "check": "node --check main.js && node --check preload.js && node --check bootstrap.js && node --check updater.js"
   },
   "keywords": [],
   "type": "commonjs",
@@ -36,6 +36,7 @@
       "main.js",
       "preload.js",
       "bootstrap.js",
+      "updater.js",
       "splash.html",
       "build/icon.png",
       "package.json"

@@ -55,3 +55,22 @@ select, textarea { font: 15px var(--sans); padding: 10px 12px; border: 1px solid
 .modes button { background: none; border: 0; color: #b9b2a2; padding: 9px 0; font: 600 13px var(--sans); letter-spacing: .06em; cursor: pointer; }
 .modes button.on { background: #e9e3d3; color: var(--ink); }
 .modes button:hover:not(.on) { color: #fff; }
+
+.update { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 36px; background: #fff6dc; border-bottom: 2px solid #c79a2a; font-size: 14px; }
+.update .msg { flex: 1; display: grid; gap: 4px; min-width: 0; }
+.update .msg span { color: #5f584e; font-size: 14px; }
+.update button { font: 600 13px var(--sans); padding: 8px 14px; border: 1.5px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; white-space: nowrap; }
+.update button:hover { background: var(--red); border-color: var(--red); }
+.update button.ghost { background: none; color: var(--ink); }
+.update button.ghost:hover { color: #fff; }
+.update .pbar { height: 8px; background: #eadfbd; } .update .pbar i { display: block; height: 100%; background: var(--red); transition: width .2s; }
+.update .pct { font-variant-numeric: tabular-nums; font-weight: 700; }
+.update .bad, .upd .bad { color: var(--red); font-style: normal; }
+.upd { border-top: 1px solid #34312c; padding: 14px 0 12px; display: grid; gap: 8px; font-size: 13px; color: #c9c2b2; }
+.upd .ver { font-weight: 700; letter-spacing: .03em; color: #e9e3d3; } .upd .ver em { font-style: normal; color: #f2c27a; font-weight: 600; }
+.upd .chk { background: none; border: 1px solid #5a564e; color: #e9e3d3; padding: 8px; font: 600 13px var(--sans); cursor: pointer; }
+.upd .chk:hover:not(:disabled) { border-color: #e9e3d3; } .upd .chk:disabled { opacity: .5; }
+.upd .auto { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: start; font-size: 13px; font-weight: 400; color: #c9c2b2; letter-spacing: 0; line-height: 1.35; cursor: pointer; }
+.upd .auto input { margin: 2px 0 0; accent-color: var(--red); width: 15px; height: 15px; }
+.upd .auto small { display: block; margin-top: 2px; font-size: 12px; color: #a39c8c; }
+.upd .ok { color: #7fb69a; font-size: 12px; } .upd .bad { font-size: 12px; }

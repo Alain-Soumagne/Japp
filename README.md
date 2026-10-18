@@ -121,6 +121,15 @@ Tout est dans `%LOCALAPPDATA%\Japp` (copie-colle ce chemin dans l'explorateur) :
 
 Le bouton **Supprimer** efface un cours et tous ses fichiers.
 
+### Mises à jour
+Au démarrage (au plus une fois par jour), Japp regarde si une version plus récente existe sur GitHub. Si oui, un bandeau apparaît :
+- **Télécharger** : Japp télécharge `Japp-Setup-X.Y.Z.exe` dans ton dossier *Téléchargements* et **vérifie sa somme SHA-256** par rapport à celle publiée dans la release (le fichier est supprimé si elle diffère).
+- **Installer, c'est toi** : ferme Japp, puis double-clique sur l'installateur. Il remplace l'ancienne version ; tes cours, tes exercices et l'environnement Python sont conservés (l'environnement n'est refait que si les dépendances ont changé).
+- **Nouveautés** ouvre les notes de version ; **Plus tard** masque le bandeau pour cette version.
+- Le bouton *Rechercher une mise à jour* (bas de la barre latérale) force la vérification, et la case *Vérifier au démarrage* la désactive.
+
+Rien n'est installé automatiquement. L'installateur n'étant pas signé numériquement, Windows SmartScreen peut de nouveau avertir (voir l'étape 3).
+
 ### Désinstaller
 *Paramètres Windows → Applications → Japp → Désinstaller.* Par prudence, tes données et l'environnement ne sont pas supprimés : efface ensuite le dossier `%LOCALAPPDATA%\Japp` pour récupérer l'espace. Les modèles (Whisper, Ollama) se suppriment séparément (dossiers ci-dessus ou `ollama rm gemma4:12b`).
 
@@ -129,6 +138,7 @@ Le bouton **Supprimer** efface un cours et tous ses fichiers.
 ## 4. Confidentialité
 
 - Les enregistrements, transcriptions et synthèses **ne quittent jamais ta machine**. Pas de télémétrie, pas de compte.
+- Au démarrage, Japp envoie **une requête** à `api.github.com` pour savoir si une nouvelle version existe (aucun identifiant, aucune donnée personnelle). Désactivable dans la barre latérale (*Vérifier au démarrage*).
 - Si tu importes un **lien YouTube**, Japp contacte YouTube pour récupérer l'audio de cette vidéo (sans cookie ni compte). Respecte les conditions d'utilisation de YouTube et les droits d'auteur : n'importe que des vidéos dont tu as le droit de te servir.
 - L'application ne se connecte à internet que pour **télécharger** : Python et ses bibliothèques (GitHub, PyPI), le modèle Whisper (Hugging Face), les modèles de synthèse (Ollama).
 - Le moteur local n'écoute que sur `127.0.0.1` ; voir [SECURITY.md](SECURITY.md) pour le détail des protections.

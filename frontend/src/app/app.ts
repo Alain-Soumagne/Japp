@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService, Job } from './api.service';
 import { JobView } from './job-view';
 import { Exercises } from './exercises';
+import { UpdateService } from './update.service';
 
 const LANGS = [
   { id: 'auto', label: 'Automatique' },
@@ -17,6 +18,7 @@ const LANGS = [
 })
 export class App {
   readonly api = inject(ApiService);
+  readonly upd = inject(UpdateService);
   readonly langs = LANGS;
   readonly lang = signal('fr');
   readonly model = signal('');

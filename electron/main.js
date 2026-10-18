@@ -7,6 +7,7 @@ const net = require('node:net');
 const path = require('node:path');
 const fs = require('node:fs');
 const { ensureEnv } = require('./bootstrap');
+const updater = require('./updater');
 
 // Tout (journaux, environnement Python, données) vit dans %LOCALAPPDATA%\Japp — jamais dans le dossier d'installation.
 const LOCAL = process.env.LOCALAPPDATA || app.getPath('appData');
@@ -23,6 +24,9 @@ const RES = process.resourcesPath;
 const APP_ROOT = path.resolve(__dirname, '..');                       // dev : dossier du dépôt
 const USER = app.getPath('userData');
 const ALLOWED_EXTERNAL = ['https://ollama.com/', 'https://github.com/'];
+const REPO = 'Alain-Soumagne/Japp';
+const PREFS_FILE = path.join(USER, 'updates.json');
+const CHECK_EVERY_MS = 20 * 3600 * 1000;
 
 let PORT = Number(process.env.JAPP_PORT || 0);
 let BASE = '';
@@ -149,6 +153,7 @@ async function createWindow() {
   try {
     await startBackend();
     await win.loadURL(BASE + '/');
+    if (upd.enabled && Date.now() - prefs.lastCheck > CHECK_EVERY_MS) setTimeout(() => checkForUpdate(), 8000);
   } catch (err) {
     dialog.showErrorBox('Démarrage impossible', `${err.message || err}\n\nJournaux : ${USER}`);
     app.quit();
@@ -157,6 +162,64 @@ async function createWindow() {
 
 ipcMain.on('open-external', (event, url) => {
   if (win && event.sender === win.webContents) openExternal(url);       // uniquement depuis la fenêtre principale
+});
+
+// ---------------------------------------------------------------- mises à jour (notification + téléchargement vérifié)
+const prefs = updater.loadPrefs(PREFS_FILE);
+const upd = { enabled: prefs.enabled, current: app.getVersion(), checking: false, error: '', checkedAt: prefs.lastCheck,
+  available: null, dismissed: false, download: { status: 'idle', progress: 0, path: '', error: '' } };
+let latestInfo = null;
+const fromMain = (e) => !!win && e.sender === win.webContents;
+function pushUpdate() { if (win && !win.isDestroyed()) win.webContents.send('update:state', upd); }
+
+async function checkForUpdate({ manual = false } = {}) {
+  if (upd.checking) return;
+  upd.checking = true; upd.error = ''; pushUpdate();
+  try {
+    const { latest, newer } = await updater.checkLatest({ repo: REPO, current: upd.current });
+    prefs.lastCheck = Date.now(); upd.checkedAt = prefs.lastCheck;
+    latestInfo = newer ? latest : null;
+    upd.available = newer ? { version: latest.version, notes: latest.notes, size: latest.exe.size, name: latest.exe.name, url: latest.htmlUrl } : null;
+    upd.dismissed = !!(newer && !manual && prefs.skipped === latest.version);
+    if (manual) upd.dismissed = false;
+    if (upd.download.status !== 'running' && !(upd.download.status === 'done' && upd.download.path.includes(latest?.version ?? '?'))) {
+      upd.download = { status: 'idle', progress: 0, path: '', error: '' };
+    }
+    updater.savePrefs(PREFS_FILE, prefs);
+  } catch (e) {
+    upd.error = manual ? `Impossible de vérifier les mises à jour (${e.message}).` : '';   // en automatique : silencieux (hors ligne, etc.)
+  } finally { upd.checking = false; pushUpdate(); }
+}
+
+ipcMain.handle('update:get', (e) => (fromMain(e) ? upd : null));
+ipcMain.handle('update:check', async (e) => { if (fromMain(e)) await checkForUpdate({ manual: true }); return upd; });
+ipcMain.handle('update:set-enabled', (e, on) => {
+  if (!fromMain(e)) return upd;
+  prefs.enabled = !!on; upd.enabled = prefs.enabled; updater.savePrefs(PREFS_FILE, prefs); pushUpdate();
+  return upd;
+});
+ipcMain.handle('update:dismiss', (e) => {
+  if (!fromMain(e) || !upd.available) return upd;
+  prefs.skipped = upd.available.version; upd.dismissed = true; updater.savePrefs(PREFS_FILE, prefs); pushUpdate();
+  return upd;
+});
+ipcMain.handle('update:download', async (e) => {
+  if (!fromMain(e) || !latestInfo || upd.download.status === 'running') return upd;
+  upd.download = { status: 'running', progress: 0, path: '', error: '' }; pushUpdate();
+  let lastPush = 0;
+  try {
+    const file = await updater.downloadVerified({ info: latestInfo, destDir: app.getPath('downloads'),
+      onProgress: (f) => { upd.download.progress = f; if (Date.now() - lastPush > 150) { lastPush = Date.now(); pushUpdate(); } } });
+    upd.download = { status: 'done', progress: 1, path: file, error: '' };
+  } catch (err) {
+    upd.download = { status: 'error', progress: 0, path: '', error: String(err.message || err) };
+  }
+  pushUpdate();
+  return upd;
+});
+ipcMain.handle('update:reveal', (e) => {
+  if (fromMain(e) && upd.download.status === 'done' && upd.download.path) shell.showItemInFolder(upd.download.path);   // l'utilisateur lance l'installateur lui-même
+  return upd;
 });
 
 if (!app.requestSingleInstanceLock()) app.quit();

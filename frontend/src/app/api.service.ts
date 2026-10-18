@@ -50,7 +50,19 @@ export interface NewJobOptions {
 
 declare global {
   interface Window {
-    native?: { getPath?: (f: File) => string; openExternal?: (url: string) => void };
+    native?: {
+      getPath?: (f: File) => string;
+      openExternal?: (url: string) => void;
+      update?: {
+        get: () => Promise<import('./update.service').UpdateState | null>;
+        check: () => Promise<import('./update.service').UpdateState>;
+        download: () => Promise<unknown>;
+        reveal: () => Promise<unknown>;
+        dismiss: () => Promise<unknown>;
+        setEnabled: (on: boolean) => Promise<unknown>;
+        onState: (cb: (s: import('./update.service').UpdateState) => void) => () => void;
+      };
+    };
   }
 }
 

@@ -23,6 +23,17 @@
       }
     </ul>
 
+    @if (upd.supported && upd.state(); as us) {
+      <div class="upd">
+        <div class="ver">Japp {{ us.current }} @if (us.available) { <em>· {{ us.available.version }} disponible</em> }</div>
+        <button class="chk" (click)="upd.check()" [disabled]="us.checking">{{ us.checking ? 'Vérification…' : 'Rechercher une mise à jour' }}</button>
+        @if (upd.upToDate()) { <small class="ok">Japp est à jour.</small> }
+        @if (us.error) { <small class="bad">{{ us.error }}</small> }
+        <label class="auto"><input type="checkbox" [checked]="us.enabled" (change)="upd.setEnabled($any($event.target).checked)" />
+          <span>Vérifier au démarrage<small>1 requête à GitHub par jour, sans donnée personnelle</small></span></label>
+      </div>
+    }
+
     <footer class="sys">
       @if (api.health(); as h) {
         <div><i [class.ok]="!!h.gpu.name"></i>{{ h.gpu.name ?? 'Pas de GPU' }}
@@ -36,6 +47,29 @@
   </aside>
 
   <main class="main">
+    @if (upd.banner(); as u) {
+      <div class="update" role="status">
+        @switch (u.download.status) {
+          @case ('running') {
+            <div class="msg"><strong>Téléchargement de Japp {{ u.available!.version }}…</strong>
+              <div class="pbar"><i [style.width.%]="u.download.progress * 100"></i></div></div>
+            <span class="pct">{{ (u.download.progress * 100).toFixed(0) }} %</span>
+          }
+          @case ('done') {
+            <div class="msg"><strong>Japp {{ u.available!.version }} est téléchargé et vérifié (SHA-256).</strong>
+              <span>Ferme Japp, puis lance l'installateur depuis ton dossier Téléchargements : il remplacera l'ancienne version, tes cours sont conservés.</span></div>
+            <button (click)="upd.reveal()">Afficher le fichier</button>
+          }
+          @default {
+            <div class="msg"><strong>Japp {{ u.available!.version }} est disponible</strong>
+              <span>Tu utilises la version {{ u.current }}. @if (u.download.status === 'error') { <em class="bad">{{ u.download.error }}</em> }</span></div>
+            <button (click)="upd.download()">{{ u.download.status === 'error' ? 'Réessayer' : 'Télécharger' }} ({{ upd.mb(u.available!.size) }})</button>
+            <button class="ghost" (click)="upd.openNotes(u.available!.url)">Nouveautés</button>
+            <button class="ghost" (click)="upd.dismiss()">Plus tard</button>
+          }
+        }
+      </div>
+    }
     @if (warning()) {
       <div class="warn">{{ warning() }}
         @if (needsOllama()) { <button class="link" (click)="getOllama()">Télécharger Ollama ↗</button> }
