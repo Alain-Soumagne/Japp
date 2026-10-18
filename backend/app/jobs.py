@@ -100,6 +100,12 @@ def create_youtube(url: str, lang: str, model: str, prompt: str) -> dict:
     return job
 
 
+def touch(job_id: str) -> None:
+    """Marque la tâche comme modifiée (l'interface recharge la présentation et la synthèse)."""
+    job = _jobs[job_id]
+    _set(job, files=files(job_id))
+
+
 def resummarize(job_id: str, model: str | None = None) -> dict:
     job = _jobs[job_id]
     if model:
@@ -137,6 +143,7 @@ def _run_summary(job: dict) -> None:
     data = summarize(text, model, lambda f, m: _progress(job, "summarizing", f, m))
     data["course"] = job["name"]
     (d / "synthese.json").write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    (d / "synthese.original.json").unlink(missing_ok=True)      # nouvelle synthèse = nouvelle base de référence
 
     _progress(job, "rendering", 0.5, "Création de la présentation…")
     render_deck(data, d / "deck.html", job["name"])

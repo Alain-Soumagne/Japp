@@ -1,17 +1,9 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ApiService, Job } from './api.service';
+import { ApiService, Job, Summary } from './api.service';
+import { SummaryEditor } from './summary-editor';
 
-type Tab = 'deck' | 'transcript' | 'summary';
-
-interface Summary {
-  title: string;
-  subtitle: string;
-  model?: string;
-  stats?: { examples_total: number; examples_kept: number };
-  sections: { title: string; key_points: string[]; examples: { japanese: string; romaji: string; french: string }[] }[];
-  homework: string[];
-}
+type Tab = 'deck' | 'transcript' | 'summary' | 'edit';
 
 const STAGES: { id: string; label: string }[] = [
   { id: 'downloading', label: 'Téléchargement' },
@@ -23,6 +15,7 @@ const STAGES: { id: string; label: string }[] = [
 
 @Component({
   selector: 'app-job-view',
+  imports: [SummaryEditor],
   template: `
     @let j = job();
     <header class="head">
@@ -64,6 +57,7 @@ const STAGES: { id: string; label: string }[] = [
         <button [class.on]="tab() === 'deck'" [disabled]="!j.files.includes('deck.html')" (click)="tab.set('deck')">Présentation</button>
         <button [class.on]="tab() === 'transcript'" [disabled]="!j.files.includes('transcript.txt')" (click)="tab.set('transcript')">Transcription</button>
         <button [class.on]="tab() === 'summary'" [disabled]="!j.files.includes('synthese.json')" (click)="tab.set('summary')">Synthèse</button>
+        <button [class.on]="tab() === 'edit'" [disabled]="!j.files.includes('synthese.json') || running()" (click)="tab.set('edit')">Éditer</button>
         <span class="spacer"></span>
         @for (f of j.files; track f) {
           <a class="dl" [href]="api.fileUrl(j.id, f, true)" [attr.download]="f">{{ f }}</a>
@@ -90,13 +84,16 @@ const STAGES: { id: string; label: string }[] = [
             </div>
           </section>
         }
+        @case ('edit') {
+          @if (summary(); as s) { <app-summary-editor [job]="j" [summary]="s" (saved)="onSaved()" /> }
+        }
         @case ('summary') {
           @if (summary(); as s) {
             <section class="summary">
               <h3>{{ s.title }}</h3>
               <p class="meta">
                 {{ s.subtitle }}
-                @if (s.stats) { · exemples vérifiés : {{ s.stats.examples_kept }}/{{ s.stats.examples_total }} }
+                @if (s.stats?.edited) { · modifiée manuellement } @else if (s.stats) { · exemples vérifiés : {{ s.stats.examples_kept }}/{{ s.stats.examples_total }} }
               </p>
               @for (sec of s.sections; track sec.title) {
                 <article>
@@ -205,6 +202,10 @@ export class JobView {
       this.orig.set(t);
     }
     if (j.files.includes('synthese.json')) this.summary.set(await this.api.getJson<Summary>(j.id, 'synthese.json'));
+  }
+
+  onSaved(): void {
+    this.api.refresh();      // met à jour la tâche : la présentation et la synthèse se rechargent
   }
 
   minutes(s: number): string {

@@ -13,7 +13,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import jobs, ollama_mgr
+from . import jobs, ollama_mgr, synthese_edit
 from .youtube import YoutubeError
 from .config import JOBS_DIR, LLM_CHOICES, LLM_MODEL, WHISPER_MODEL
 
@@ -223,6 +223,43 @@ def put_transcript(job_id: str, body: TranscriptBody) -> dict:
     _need(job_id)
     (JOBS_DIR / job_id / "transcript.txt").write_text(body.text, encoding="utf-8")
     return {"ok": True}
+
+
+def _editable(job_id: str) -> dict:
+    j = _need(job_id)
+    if j["status"] in ("queued", "running"):
+        raise HTTPException(409, "Tâche en cours : attends la fin avant de modifier la synthèse.")
+    if not (JOBS_DIR / job_id / "synthese.json").exists():
+        raise HTTPException(409, "Pas de synthèse à modifier.")
+    return j
+
+
+@app.put("/jobs/{job_id}/synthese")
+def put_synthese(job_id: str, body: synthese_edit.SyntheseIn) -> dict:
+    j = _editable(job_id)
+    try:
+        data = synthese_edit.save(JOBS_DIR / job_id, body, j["name"])
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    jobs.touch(job_id)
+    return {"ok": True, "synthese": data, "can_restore": True}
+
+
+@app.post("/jobs/{job_id}/synthese/restore")
+def restore_synthese(job_id: str) -> dict:
+    j = _editable(job_id)
+    try:
+        data = synthese_edit.restore(JOBS_DIR / job_id, j["name"])
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e)) from e
+    jobs.touch(job_id)
+    return {"ok": True, "synthese": data, "can_restore": False}
+
+
+@app.get("/jobs/{job_id}/synthese/status")
+def synthese_status(job_id: str) -> dict:
+    _need(job_id)
+    return {"can_restore": synthese_edit.has_original(JOBS_DIR / job_id)}
 
 
 class ResumBody(BaseModel):

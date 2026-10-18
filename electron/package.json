@@ -1,6 +1,6 @@
 {
   "name": "japp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Transcription locale de cours (Whisper), synthèse (Ollama) et présentation HTML — 100 % hors ligne",
   "main": "main.js",
   "scripts": {

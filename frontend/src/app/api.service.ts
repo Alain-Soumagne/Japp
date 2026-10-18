@@ -21,6 +21,18 @@ export interface Job {
   info: { language?: string; duration?: number };
 }
 
+export interface Example { japanese: string; romaji: string; french: string }
+export interface Section { title: string; key_points: string[]; examples: Example[] }
+export interface Summary {
+  title: string;
+  subtitle: string;
+  model?: string;
+  stats?: { examples_total: number; examples_kept: number; edited?: boolean };
+  sections: Section[];
+  homework: string[];
+}
+export type SummaryEdit = Pick<Summary, 'title' | 'subtitle' | 'sections' | 'homework'>;
+
 export interface Health {
   ok: boolean;
   gpu: { name: string | null; vram_total_mb?: number; vram_used_mb?: number };
@@ -126,6 +138,18 @@ export class ApiService {
 
   async saveTranscript(id: string, text: string): Promise<void> {
     await firstValueFrom(this.http.put(`${this.base}/jobs/${id}/transcript`, { text }));
+  }
+
+  async saveSynthese(id: string, body: SummaryEdit): Promise<{ synthese: Summary; can_restore: boolean }> {
+    return firstValueFrom(this.http.put<{ synthese: Summary; can_restore: boolean }>(`${this.base}/jobs/${id}/synthese`, body));
+  }
+
+  async restoreSynthese(id: string): Promise<{ synthese: Summary; can_restore: boolean }> {
+    return firstValueFrom(this.http.post<{ synthese: Summary; can_restore: boolean }>(`${this.base}/jobs/${id}/synthese/restore`, {}));
+  }
+
+  synthesStatus(id: string): Promise<{ can_restore: boolean }> {
+    return firstValueFrom(this.http.get<{ can_restore: boolean }>(`${this.base}/jobs/${id}/synthese/status`));
   }
 
   async resummarize(id: string, model: string): Promise<void> {

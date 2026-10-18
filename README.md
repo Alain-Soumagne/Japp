@@ -87,6 +87,7 @@ Pour gagner du temps, tu peux le préparer à l'avance dans un terminal : `ollam
    - **Présentation** — flèches ← → ou clic pour naviguer, `F` pour le plein écran, bouton « Ouvrir en grand ».
    - **Transcription** — corrige les erreurs, puis *Enregistrer et régénérer la synthèse* (sans retranscrire).
    - **Synthèse** — la version texte, avec le nombre d'exemples vérifiés.
+   - **Éditer** — corrige le titre, les points clés, les exemples et les devoirs ; **supprime** les notions (et donc les diapos) qui ne te servent pas, réordonne-les ou ajoute-en. *Enregistrer* régénère la présentation instantanément, sans IA. Ta version d'origine est conservée : *Restaurer la version de l'IA* la remet. Attention : *Régénérer la synthèse* écrase tes modifications.
    - Boutons de téléchargement : `.txt`, `.srt`, `.md`, `.json`, `.html`.
 
 ### Où sont mes données ?
