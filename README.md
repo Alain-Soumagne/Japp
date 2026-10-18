@@ -90,12 +90,30 @@ Pour gagner du temps, tu peux le préparer à l'avance dans un terminal : `ollam
    - **Éditer** — corrige le titre, les points clés, les exemples et les devoirs ; **supprime** les notions (et donc les diapos) qui ne te servent pas, réordonne-les ou ajoute-en. *Enregistrer* régénère la présentation instantanément, sans IA. Ta version d'origine est conservée : *Restaurer la version de l'IA* la remet. Attention : *Régénérer la synthèse* écrase tes modifications.
    - Boutons de téléchargement : `.txt`, `.srt`, `.md`, `.json`, `.html`.
 
+### Exercices (onglet « Exercices »)
+Une fois quelques cours traités, révise-les avec des exercices générés **par le modèle local**, uniquement à partir du contenu de tes cours :
+
+1. Choisis les cours à inclure et le nombre de questions (5 à 30).
+2. Réponds : traductions japonais ↔ français, lecture en romaji, particule manquante, QCM, questions courtes. Les réponses en japonais s'écrivent en kana, en kanji **ou en romaji** (les voyelles longues et la ponctuation sont tolérées).
+3. Envoie : les réponses fermées sont corrigées automatiquement, les réponses libres par le modèle. Si Ollama n'est pas disponible, une correction approximative (sans IA) prend le relais.
+4. **Conteste** une correction que tu estimes fausse : le modèle la réexamine une fois avec le cours sous les yeux, et sa décision est finale. Si tu restes en désaccord après réexamen, tu peux **exclure la question du score**.
+5. Clique sur **Terminer et valider mon score** : tu obtiens un score sur 100 et ton niveau évolue.
+
+**Comment sont calculés le score et le niveau ?**
+- Chaque cours a une difficulté estimée (longueur des phrases, part de kanji, nombre de notions), chaque question aussi.
+- Le **score** (0-100) pondère la réussite par la difficulté : réussir une question difficile rapporte plus. Une réponse partielle vaut un demi-point.
+- Ton **niveau** (de 1 à 10) monte ou baisse selon l'écart entre ta réussite réelle et la réussite attendue à ce niveau, **de 0,5 point au maximum par session** : la progression est continue, sans « mur » de difficulté.
+- La session suivante vise un cran au-dessus de ton niveau : environ 20 % de révision plus facile, 60 % au niveau, 20 % un peu plus dur.
+
+Tes sessions et ton niveau sont stockés localement (`data\exercises\`).
+
 ### Où sont mes données ?
 Tout est dans `%LOCALAPPDATA%\Japp` (copie-colle ce chemin dans l'explorateur) :
 
 | Élément | Emplacement |
 |---|---|
 | Tes cours traités | `data\jobs\<identifiant>\` |
+| Sessions d'exercices et niveau | `data\exercises\` |
 | Environnement Python | `env\` |
 | Journaux (en cas de problème) | `backend.log`, `setup.log` |
 | Modèle Whisper | `%USERPROFILE%\.cache\huggingface` |

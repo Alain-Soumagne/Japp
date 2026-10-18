@@ -64,6 +64,7 @@ export class ApiService {
   readonly health = signal<Health | null>(null);
   readonly backendUp = signal<boolean>(true);
   readonly selectedId = signal<string | null>(null);
+  readonly view = signal<'courses' | 'exercises'>('courses');
   readonly selected = computed(() => this.jobs().find((j) => j.id === this.selectedId()) ?? null);
   readonly busy = computed(() => this.jobs().some((j) => j.status === 'queued' || j.status === 'running'));
 

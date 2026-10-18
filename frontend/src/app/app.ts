@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService, Job } from './api.service';
 import { JobView } from './job-view';
+import { Exercises } from './exercises';
 
 const LANGS = [
   { id: 'auto', label: 'Automatique' },
@@ -10,7 +11,7 @@ const LANGS = [
 
 @Component({
   selector: 'app-root',
-  imports: [JobView],
+  imports: [JobView, Exercises],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

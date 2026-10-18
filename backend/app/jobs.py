@@ -20,6 +20,7 @@ LABELS = {"queued": "En attente", "downloading": "Téléchargement YouTube", "tr
 _jobs: dict[str, dict] = {}
 _q: "queue.Queue[tuple[str, str]]" = queue.Queue()
 _lock = threading.Lock()
+GPU_LOCK = threading.Lock()   # un seul usage lourd du GPU/Ollama à la fois (transcription, synthèse, exercices)
 
 
 def _dir(job_id: str) -> Path:
@@ -156,6 +157,7 @@ def _worker() -> None:
         job = _jobs.get(job_id)
         if not job:
             continue
+        GPU_LOCK.acquire()
         try:
             _set(job, status="running", error=None)
             d = _dir(job_id)
@@ -180,6 +182,8 @@ def _worker() -> None:
             traceback.print_exc()
             _set(job, status="error", stage="error", error=f"{type(e).__name__}: {e}", message=LABELS["error"],
                  files=files(job_id))
+        finally:
+            GPU_LOCK.release()
 
 
 def start() -> None:

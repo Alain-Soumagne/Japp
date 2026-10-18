@@ -50,3 +50,8 @@ select, textarea { font: 15px var(--sans); padding: 10px 12px; border: 1px solid
 .yt button { padding: 0 20px; border: 0; background: var(--ink); color: #fff; font: 700 15px var(--sans); cursor: pointer; }
 .yt button:hover:not(:disabled) { background: var(--red); }
 .yt button:disabled { opacity: .45; cursor: not-allowed; }
+
+.modes { display: grid; grid-template-columns: 1fr 1fr; margin: 4px 0 14px; border: 1.5px solid #4a463f; }
+.modes button { background: none; border: 0; color: #b9b2a2; padding: 9px 0; font: 600 13px var(--sans); letter-spacing: .06em; cursor: pointer; }
+.modes button.on { background: #e9e3d3; color: var(--ink); }
+.modes button:hover:not(.on) { color: #fff; }

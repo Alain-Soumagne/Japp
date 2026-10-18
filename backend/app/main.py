@@ -278,6 +278,11 @@ def resummarize(job_id: str, body: ResumBody) -> dict:
     return jobs.resummarize(job_id, body.model or None)
 
 
+from .exercises_api import router as _exercises_router  # noqa: E402
+
+app.include_router(_exercises_router)
+
+
 # --- Interface Angular servie par le backend (même origine -> pas de CORS, pas de souci de base href) ---
 import os  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402

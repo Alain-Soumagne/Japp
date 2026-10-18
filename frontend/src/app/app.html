@@ -2,11 +2,16 @@
   <aside class="side">
     <div class="brand"><span class="mark">学</span><div><strong>Japp</strong><small>transcription locale</small></div></div>
 
-    <button class="new" (click)="api.selectedId.set(null)">＋ Nouveau cours</button>
+    <nav class="modes" aria-label="Section">
+      <button [class.on]="api.view() === 'courses'" (click)="api.view.set('courses')">Cours</button>
+      <button [class.on]="api.view() === 'exercises'" (click)="api.view.set('exercises')">Exercices</button>
+    </nav>
+
+    <button class="new" (click)="api.view.set('courses'); api.selectedId.set(null)">＋ Nouveau cours</button>
 
     <ul class="jobs">
       @for (j of api.jobs(); track j.id) {
-        <li [class.on]="j.id === api.selectedId()" (click)="select(j)">
+        <li [class.on]="api.view() === 'courses' && j.id === api.selectedId()" (click)="api.view.set('courses'); select(j)">
           <span class="name">{{ j.name }}</span>
           <span class="st" [attr.data-s]="j.status">{{ statusLabel(j) }}</span>
           @if (j.status === 'running' || j.status === 'queued') {
@@ -37,7 +42,9 @@
       </div>
     }
 
-    @if (api.selected(); as j) {
+    @if (api.view() === 'exercises') {
+      <app-exercises />
+    } @else if (api.selected(); as j) {
       <app-job-view [job]="j" />
     } @else {
       <section class="new-job">
