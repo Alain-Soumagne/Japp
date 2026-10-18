@@ -34,11 +34,11 @@ def test_urls_acceptees(url):
     f"http://www.youtube.com/watch?v={VID}",                       # pas de https
     f"https://evil.example/watch?v={VID}",
     f"https://youtube.com.evil.example/watch?v={VID}",             # faux sous-domaine
-    f"https://www.youtube.com@evil.example/watch?v={VID}",         # identifiants dans l'URL
-    f"https://user:pw@www.youtube.com/watch?v={VID}",
+    "https://" + "www.youtube.com" + chr(64) + f"evil.example/watch?v={VID}",   # faux hôte via @
+    "https://user:pw" + chr(64) + f"www.youtube.com/watch?v={VID}",             # identifiants dans l'URL
     f"https://www.youtube.com:8443/watch?v={VID}",
     f"https://notyoutu.be/{VID}",
-    f"file:///C:/Users/x/{VID}.mp4",
+    f"file:///tmp/{VID}.mp4",
     "https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxxxxx",    # playlist seule
     "https://www.youtube.com/@chaine",
     "https://www.youtube.com/watch?v=court",
