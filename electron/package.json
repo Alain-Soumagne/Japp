@@ -15,7 +15,7 @@
   "type": "commonjs",
   "devDependencies": {
     "electron": "^44.9.0",
-    "electron-builder": "26.15.3"
+    "electron-builder": "26.18.0"
   },
   "productName": "Japp",
   "private": true,
