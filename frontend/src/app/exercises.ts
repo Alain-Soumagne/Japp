@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { ExQuestion, ExercisesService, TYPE_LABEL } from './exercises.service';
+import { ExQuestion, ExercisesService, SESSION_TYPES, TYPE_LABEL } from './exercises.service';
 import { ApiService } from './api.service';
 
 @Component({
@@ -166,12 +166,24 @@ import { ApiService } from './api.service';
               <li>
                 <label class="pick"><input type="checkbox" [checked]="chosen().has(c.id)" (change)="toggle(c.id)" />
                   <span class="nm">{{ c.name }}</span>
+                  @if (c.kind === 'other') { <span class="chip">autre contenu</span> }
                   <span class="chip">difficulté {{ c.difficulty.toFixed(1) }}/10</span>
-                  <span class="chip">{{ c.examples }} exemples</span>
+                  @if (c.kind === 'course') {
+                    <span class="chip">{{ c.examples }} exemples</span>
+                    <span class="chip" [class.warn]="!c.kanji_words">{{ c.vocabulary ? c.kanji_words + ' mots à kanji' : 'vocabulaire à extraire' }}</span>
+                  }
                 </label>
               </li>
             }
           </ul>
+          <fieldset class="types">
+            <legend>Types de questions</legend>
+            @for (t of sessionTypes; track t.id) {
+              <label class="tp"><input type="checkbox" [checked]="types().has(t.id)" (change)="toggleType(t.id)" />
+                <span>{{ t.label }}<small>{{ t.hint }}</small></span></label>
+            }
+          </fieldset>
+          @for (w of typeWarnings(); track w) { <p class="note">{{ w }}</p> }
           <div class="opts">
             <label>Nombre de questions
               <select (change)="count.set(+$any($event.target).value)">
@@ -185,8 +197,9 @@ import { ApiService } from './api.service';
               </select>
             </label>
           </div>
-          <div class="go"><button class="primary" (click)="start()" [disabled]="!chosen().size || ex.busy()">Démarrer la session</button>
-            @if (!chosen().size) { <span class="muted">Coche au moins un cours.</span> }</div>
+          <div class="go"><button class="primary" (click)="start()" [disabled]="!chosen().size || !types().size || ex.busy()">Démarrer la session</button>
+            @if (!chosen().size) { <span class="muted">Coche au moins un cours.</span> }
+            @else if (!types().size) { <span class="muted">Coche au moins un type de question.</span> }</div>
         }
 
         @if (ex.past().length) {
@@ -237,8 +250,15 @@ import { ApiService } from './api.service';
     .pick:hover { border-color: var(--ink); }
     .pick input { width: 18px; height: 18px; accent-color: var(--red); }
     .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-    .chip { font: 600 12px var(--sans); background: var(--paper2); padding: 3px 8px; color: #4a443b; white-space: nowrap; }
+    .chip { font: 600 12px var(--sans); background: #e2d9c4; padding: 3px 8px; color: #3a352e; white-space: nowrap; }
     .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0 20px; }
+    .types { border: 0; padding: 0; margin: 18px 0 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+    .types { border-top: 1px solid var(--line); padding-top: 16px !important; }
+    .types legend { font: 700 16px var(--serif); color: var(--ink); padding: 0 8px 0 0; margin-bottom: 8px; float: left; width: 100%; }
+    .types legend + * { clear: both; }
+    .tp { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; font-size: 15px; color: var(--ink); font-weight: 600; letter-spacing: 0; cursor: pointer; }
+    .tp input { margin-top: 3px; accent-color: var(--red); width: 16px; height: 16px; } .tp small { display: block; font-weight: 400; color: #4a443b; font-size: 13px; }
+    .chip.warn { background: #f6ecd2; color: #7a5a10; }
     .past li { display: flex; gap: 6px; }
     .past .row { flex: 1; display: flex; gap: 14px; align-items: center; background: var(--card); color: var(--ink); border: 1px solid var(--line); text-align: left; font-weight: 400; }
     .past .row:hover:not(:disabled) { background: var(--card); border-color: var(--ink); color: var(--ink); }
@@ -305,6 +325,8 @@ export class Exercises implements OnInit, OnDestroy {
 
   readonly s = this.ex.session;
   readonly chosen = signal(new Set<string>());
+  readonly sessionTypes = SESSION_TYPES;
+  readonly types = signal(new Set<string>(this.savedTypes()));
   readonly count = signal(10);
   readonly model = signal('');
   readonly open = signal<string | null>(null);
@@ -325,10 +347,34 @@ export class Exercises implements OnInit, OnDestroy {
   toggle(id: string): void {
     this.chosen.update((c) => { const n = new Set(c); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
-  start(): void { this.ex.start([...this.chosen()], this.count(), this.model()); }
+  private savedTypes(): string[] {
+    try {
+      const v = JSON.parse(localStorage.getItem('japp.ex.types') ?? 'null') as unknown;
+      const ok = Array.isArray(v) ? v.filter((x): x is string => SESSION_TYPES.some((t) => t.id === x)) : [];
+      return ok.length ? ok : SESSION_TYPES.map((t) => t.id);
+    } catch { return SESSION_TYPES.map((t) => t.id); }
+  }
+  toggleType(id: string): void {
+    this.types.update((c) => { const n = new Set(c); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    try { localStorage.setItem('japp.ex.types', JSON.stringify([...this.types()])); } catch { /* stockage indisponible */ }
+  }
+  readonly typeWarnings = computed(() => {
+    const picked = this.ex.courses().filter((c) => this.chosen().has(c.id));
+    const out: string[] = [];
+    const noKanji = picked.filter((c) => c.kind === 'course' && !c.kanji_words);
+    if (this.types().has('kanji_reading') && noKanji.length) {
+      out.push(`« ${noKanji.map((c) => c.name).join(', ')} » n'a pas de mot avec kanji dans son vocabulaire${noKanji.some((c) => !c.vocabulary) ? ' : extrais-le depuis l\'onglet Vocabulaire' : ''}.`);
+    }
+    if (this.types().has('model') && this.api.health() && !this.api.health()!.ollama.installed) {
+      out.push("Ollama n'est pas installé : les questions écrites par le modèle seront ignorées et les traductions seront corrigées de façon approximative.");
+    }
+    if (picked.some((c) => c.kind === 'other')) out.push('Les contenus « autre » sont interrogés uniquement par des questions écrites par le modèle (Ollama requis).');
+    return out;
+  });
+  start(): void { this.ex.start([...this.chosen()], this.count(), this.model(), [...this.types()]); }
 
   label(t: string): string { return TYPE_LABEL[t] ?? t; }
-  isJp(q: ExQuestion): boolean { return ['translate_ja_fr', 'reading', 'cloze'].includes(q.type); }
+  isJp(q: ExQuestion): boolean { return ['translate_ja_fr', 'reading', 'cloze', 'kanji_reading'].includes(q.type); }
   vlabel(v: string): string { return v === 'correct' ? 'Correct' : v === 'partial' ? 'Partiel' : 'Incorrect'; }
   verdict(q: ExQuestion): string { return this.vlabel(q.verdict ?? 'incorrect'); }
   by(q: ExQuestion): string { return q.graded_by === 'auto' ? 'correction automatique' : q.graded_by === 'ia' ? 'corrigé par le modèle' : 'correction approximative'; }
@@ -350,7 +396,7 @@ export class Exercises implements OnInit, OnDestroy {
   shown(q: ExQuestion): string { return q.type === 'cloze' ? q.prompt.replace('＿', '［　？　］') : q.prompt; }
   placeholder(q: ExQuestion): string {
     return q.type === 'translate_ja_fr' ? 'Ta traduction en français…' : q.type === 'cloze' ? 'La particule manquante…'
-      : q.type === 'reading' ? 'La lecture en romaji…' : 'Ta réponse en japonais (kana, kanji ou romaji)…';
+      : q.type === 'reading' ? 'La lecture en romaji…' : q.type === 'kanji_reading' ? 'La lecture en hiragana ou en romaji…' : 'Ta réponse en japonais (kana, kanji ou romaji)…';
   }
 
   go(d: number): void { this.ex.saveDraft(); this.ex.index.update((i) => i + d); }

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 
-export interface ExCourse { id: string; name: string; difficulty: number; examples: number; sections: number }
+export interface ExCourse { id: string; name: string; difficulty: number; examples: number; sections: number; kind: 'course' | 'other'; kanji_words: number; vocabulary: boolean }
 export interface ExHistory { id: string; date: string; score: number; level_before: number; level_after: number; n: number; courses: string[] }
 export interface ExProfile { level: number; label: string; history: ExHistory[]; sessions: number; default_model: string }
 export interface ExContest { argument: string; verdict: Verdict; feedback: string; changed: boolean; previous: Verdict }
@@ -25,8 +25,17 @@ export interface ExSummary { id: string; created: number; status: string; count:
 
 export const TYPE_LABEL: Record<string, string> = {
   mcq: 'QCM', short: 'Question courte', translate_ja_fr: 'Traduction japonais → français', translate_fr_ja: 'Traduction français → japonais',
-  reading: 'Lecture (romaji)', cloze: 'Particule manquante',
+  reading: 'Lecture (romaji)', cloze: 'Particule manquante', kanji_reading: 'Lecture des kanji',
 };
+
+export const SESSION_TYPES: { id: string; label: string; hint: string }[] = [
+  { id: 'translate_ja_fr', label: 'Traduction japonais → français', hint: 'une phrase du cours à traduire' },
+  { id: 'translate_fr_ja', label: 'Traduction français → japonais', hint: 'en kana, kanji ou romaji' },
+  { id: 'cloze', label: 'Particule manquante', hint: 'は, を, に…' },
+  { id: 'kanji_reading', label: 'Lecture des kanji', hint: 'nécessite le vocabulaire du cours' },
+  { id: 'reading', label: 'Lecture d\'une phrase', hint: 'en romaji' },
+  { id: 'model', label: 'Questions du modèle', hint: 'QCM et réponses courtes · nécessite Ollama' },
+];
 
 @Injectable({ providedIn: 'root' })
 export class ExercisesService {
@@ -63,10 +72,10 @@ export class ExercisesService {
     } catch (e) { this.error.set(this.detail(e)); }
   }
 
-  async start(jobIds: string[], count: number, model: string): Promise<void> {
+  async start(jobIds: string[], count: number, model: string, types: string[]): Promise<void> {
     this.error.set(''); this.busy.set(true);
     try {
-      const s = await firstValueFrom(this.http.post<ExSession>(`${this.base}/sessions`, { job_ids: jobIds, count, model }));
+      const s = await firstValueFrom(this.http.post<ExSession>(`${this.base}/sessions`, { job_ids: jobIds, count, model, types }));
       this.open(s);
     } catch (e) { this.error.set(this.detail(e)); } finally { this.busy.set(false); }
   }

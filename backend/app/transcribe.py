@@ -53,6 +53,13 @@ def decode_audio(path: str, sr: int = 16000):
         return np.frombuffer(raw, dtype=np.float32)
 
 
+def whisper_options(lang: str | None, prompt: str | None) -> tuple[str | None, str | None]:
+    """Convertit le choix de l'interface en (langue Whisper, amorce).
+    Note : Whisper écrit toujours en romaji les mots japonais prononcés dans une phrase française (testé avec une amorce en kana :
+    sans effet) ; le kana et les kanji apparaissent dans la synthèse (exemples) et dans le vocabulaire."""
+    return (None if lang in (None, "", "auto") else lang), prompt or None
+
+
 def transcribe(src: str, out_base: Path, lang: str | None = None, prompt: str | None = None,
                on_progress: Callable[[float, str], None] | None = None) -> dict:
     """Retourne {language, duration, segments:[{start,end,text}]} et écrit .txt/.srt/.md."""
@@ -66,10 +73,11 @@ def transcribe(src: str, out_base: Path, lang: str | None = None, prompt: str | 
         if on_progress:
             on_progress(0.0, "Décodage de l'audio…")
         audio = decode_audio(src)
+        w_lang, w_prompt = whisper_options(lang, prompt)
         segs, info = model.transcribe(
-            audio, language=None if lang in (None, "", "auto") else lang, vad_filter=True,
+            audio, language=w_lang, vad_filter=True,
             vad_parameters=dict(min_silence_duration_ms=500), condition_on_previous_text=False,
-            initial_prompt=prompt or None, beam_size=5)
+            initial_prompt=w_prompt, beam_size=5)
         rows = []
         for s in segs:
             rows.append({"start": s.start, "end": s.end, "text": s.text.strip()})

@@ -74,3 +74,12 @@ select, textarea { font: 15px var(--sans); padding: 10px 12px; border: 1px solid
 .upd .auto input { margin: 2px 0 0; accent-color: var(--red); width: 15px; height: 15px; }
 .upd .auto small { display: block; margin-top: 2px; font-size: 12px; color: #a39c8c; }
 .upd .ok { color: #7fb69a; font-size: 12px; } .upd .bad { font-size: 12px; }
+
+.kinds { border: 0; padding: 0; margin: 26px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; min-width: 0; }
+.kinds legend { font: 700 16px var(--serif); color: var(--ink); padding: 0; margin-bottom: 10px; }
+.kind { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; padding: 12px 14px; border: 1.5px solid #8f887a; background: var(--card); cursor: pointer; color: var(--ink); letter-spacing: 0; font-weight: 400; font-size: 15px; }
+.kind input { margin-top: 3px; accent-color: var(--red); width: 16px; height: 16px; }
+.kind b { display: block; } .kind small { display: block; margin-top: 2px; color: #3a352e; font-size: 13px; line-height: 1.35; }
+.kind.on { border-color: var(--red); background: var(--red-soft); }
+.modes { grid-template-columns: repeat(3, 1fr) !important; }
+.modes button { font-size: 12px !important; letter-spacing: .03em !important; }

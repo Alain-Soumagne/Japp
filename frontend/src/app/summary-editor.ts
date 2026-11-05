@@ -38,23 +38,28 @@ import { ApiService, Job, Summary } from './api.service';
 
             <h5>Exemples</h5>
             @if (sec.examples.length) {
-              <div class="line cols"><span>Japonais</span><span>Romaji</span><span>Français</span><i></i></div>
+              @if (other()) { <div class="line cols two"><span>Citation (langue d'origine)</span><span>Traduction française</span><i></i></div> }
+              @else { <div class="line cols"><span>Japonais</span><span>Romaji</span><span>Français</span><i></i></div> }
             }
             @for (e of sec.examples; track $index; let ei = $index) {
-              <div class="line ex">
-                <input class="jp" [value]="e.japanese" placeholder="日本語" (input)="set($event, (x, v) => (x.sections[si].examples[ei].japanese = v))" maxlength="400" aria-label="Japonais" />
-                <input [value]="e.romaji" placeholder="romaji" (input)="set($event, (x, v) => (x.sections[si].examples[ei].romaji = v))" maxlength="400" aria-label="Romaji" />
+              <div class="line ex" [class.two]="other()">
+                @if (other()) {
+                  <input [value]="e.source ?? ''" placeholder="citation" (input)="set($event, (x, v) => (x.sections[si].examples[ei].source = v))" maxlength="400" aria-label="Citation" />
+                } @else {
+                  <input class="jp" [value]="e.japanese ?? ''" placeholder="日本語" (input)="set($event, (x, v) => (x.sections[si].examples[ei].japanese = v))" maxlength="400" aria-label="Japonais" />
+                  <input [value]="e.romaji ?? ''" placeholder="romaji" (input)="set($event, (x, v) => (x.sections[si].examples[ei].romaji = v))" maxlength="400" aria-label="Romaji" />
+                }
                 <input [value]="e.french" placeholder="français" (input)="set($event, (x, v) => (x.sections[si].examples[ei].french = v))" maxlength="400" aria-label="Français" />
                 <button class="icon danger" title="Supprimer cet exemple" (click)="mut(x => x.sections[si].examples.splice(ei, 1))">✕</button>
               </div>
             }
-            <button class="add" (click)="mut(x => x.sections[si].examples.push({ japanese: '', romaji: '', french: '' }))">＋ Ajouter un exemple</button>
+            <button class="add" (click)="mut(x => x.sections[si].examples.push(other() ? { source: '', french: '' } : { japanese: '', romaji: '', french: '' }))">＋ Ajouter un exemple</button>
           </article>
         }
         <button class="add big" (click)="mut(x => x.sections.push({ title: 'Nouvelle notion', key_points: [''], examples: [] }))">＋ Ajouter une notion</button>
 
         <article class="card">
-          <h5 style="margin-top:0">Devoirs et conseils</h5>
+          <h5 style="margin-top:0">{{ other() ? 'Actions et points à retenir' : 'Devoirs et conseils' }}</h5>
           @for (h of d.homework; track $index; let hi = $index) {
             <div class="line">
               <textarea rows="2" [value]="h" maxlength="800" (input)="set($event, (x, v) => (x.homework[hi] = v))"></textarea>
@@ -92,6 +97,7 @@ import { ApiService, Job, Summary } from './api.service';
     h5 { margin: 8px 0 0; font: 700 12px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
     .line { display: flex; gap: 8px; align-items: start; }
     .line.ex { align-items: center; }
+    .line.ex.two input, .line.cols.two span { flex: 1 !important; }
     .line.ex input:nth-child(1), .line.cols span:nth-child(1) { flex: 5; }
     .line.ex input:nth-child(2), .line.cols span:nth-child(2) { flex: 4; }
     .line.ex input:nth-child(3), .line.cols span:nth-child(3) { flex: 6; }
@@ -125,6 +131,7 @@ export class SummaryEditor {
   readonly msg = signal('');
   readonly isErr = signal(false);
   readonly canRestore = signal(false);
+  readonly other = computed(() => this.summary().kind === 'other');
   readonly dirty = computed(() => !!this.draft() && JSON.stringify(this.draft()) !== this.base());
 
   constructor() {

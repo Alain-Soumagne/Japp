@@ -43,6 +43,7 @@ h2{font-size:76px;line-height:1.1;margin:16px 0 40px}
 .exs .jp{font-family:var(--serif);font-size:50px;line-height:1.3}
 .exs .ro{font-size:25px;color:var(--muted);margin-top:4px}
 .exs .fr{font-size:30px;margin-top:6px}
+.exs .jp.src{font-family:var(--sans);font-size:34px;line-height:1.35;font-weight:600}
 .exs h4{font-size:22px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;font-weight:600}
 /* todo */
 .todo{list-style:none}
@@ -72,17 +73,18 @@ const D = JSON.parse(document.getElementById('data').textContent);
 const stage = document.getElementById('stage');
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const chunk = (a, n) => { const r = []; for (let i = 0; i < a.length; i += n) r.push(a.slice(i, i + n)); return r.length ? r : [[]]; };
+const OTHER = D.kind === 'other';
 const slides = [];
 const add = (node, label) => { node.classList.add('slide'); node.dataset.label = label || ''; stage.appendChild(node); slides.push(node); return node; };
 
 // 1. couverture
 { const s = el('section', 'cover');
-  s.append(el('div', 'big', '学'), el('div', 'sun'), el('div', 'kicker', D.course_label || 'Synthèse de cours'),
+  s.append(el('div', 'big', OTHER ? '要' : '学'), el('div', 'sun'), el('div', 'kicker', D.course_label || (OTHER ? 'Synthèse' : 'Synthèse de cours')),
            el('h1', '', D.title), el('div', 'sub', D.subtitle || ''));
   add(s, 'Titre'); }
 
 // 2. plan
-if (D.sections.length > 1) { const s = el('section'); s.append(el('div', 'kicker', 'Au programme'), el('h2', '', D.sections.length + ' notions'));
+if (D.sections.length > 1) { const s = el('section'); s.append(el('div', 'kicker', 'Au programme'), el('h2', '', D.sections.length + (OTHER ? ' sujets' : ' notions')));
   const g = el('div', 'plan'); D.sections.forEach((x, i) => { const d = el('div'); d.append(el('span', '', String(i + 1).padStart(2, '0')), document.createTextNode(x.title)); g.appendChild(d); });
   s.appendChild(g); add(s, 'Plan'); }
 
@@ -92,11 +94,14 @@ D.sections.forEach((sec, i) => {
   const n = Math.max(kp.length, ex.length);
   for (let p = 0; p < n; p++) {
     const s = el('section'); const hasEx = ex[p] && ex[p].length, hasKp = kp[p] && kp[p].length;
-    s.append(el('div', 'kicker', String(i + 1).padStart(2, '0') + ' · ' + (n > 1 ? `Partie ${p + 1}/${n}` : 'Notion')), el('h2', '', sec.title));
+    s.append(el('div', 'kicker', String(i + 1).padStart(2, '0') + ' · ' + (n > 1 ? `Partie ${p + 1}/${n}` : (OTHER ? 'Sujet' : 'Notion'))), el('h2', '', sec.title));
     const cols = el('div', 'cols' + (hasEx && hasKp ? '' : ' single'));
     if (hasKp) { const ul = el('ul', 'pts'); kp[p].forEach(t => ul.appendChild(el('li', '', t))); cols.appendChild(ul); }
-    if (hasEx) { const w = el('div', 'exs'); w.appendChild(el('h4', '', 'Exemples du cours'));
-      ex[p].forEach(e => { const d = el('div', 'ex'); d.append(el('div', 'jp', e.japanese), el('div', 'ro', e.romaji), el('div', 'fr', e.french)); w.appendChild(d); });
+    if (hasEx) { const w = el('div', 'exs'); w.appendChild(el('h4', '', OTHER ? 'Citations' : 'Exemples du cours'));
+      ex[p].forEach(e => { const d = el('div', 'ex'); d.append(el('div', OTHER ? 'jp src' : 'jp', e.japanese || e.source || ''));
+        if (e.romaji) d.appendChild(el('div', 'ro', e.romaji));
+        if (e.french) d.appendChild(el('div', 'fr', e.french));
+        w.appendChild(d); });
       cols.appendChild(w); }
     s.appendChild(cols); add(s, sec.title);
   }
@@ -104,11 +109,11 @@ D.sections.forEach((sec, i) => {
 
 // 4. devoirs
 if (D.homework && D.homework.length) chunk(D.homework, 6).forEach((hw, p, all) => {
-  const s = el('section'); s.append(el('div', 'kicker', 'Devoirs et conseils'), el('h2', '', all.length > 1 ? `À faire (${p + 1}/${all.length})` : 'À faire'));
+  const s = el('section'); s.append(el('div', 'kicker', OTHER ? 'Actions et décisions' : 'Devoirs et conseils'), el('h2', '', (OTHER ? 'À retenir' : 'À faire') + (all.length > 1 ? ` (${p + 1}/${all.length})` : '')));
   const ul = el('ul', 'todo'); hw.forEach(t => ul.appendChild(el('li', '', t))); s.appendChild(ul); add(s, 'Devoirs'); });
 
 // 5. fin
-{ const s = el('section', 'end'); const d = el('div'); d.append(el('div', 'jp', '頑張って'), el('div', 'fr', 'Bon courage !')); s.appendChild(d); add(s, 'Fin'); }
+{ const s = el('section', 'end'); const d = el('div'); d.append(el('div', 'jp', OTHER ? '以上' : '頑張って'), el('div', 'fr', OTHER ? 'Fin de la synthèse' : 'Bon courage !')); s.appendChild(d); add(s, 'Fin'); }
 
 // pied de page + ajustement auto de la taille du texte
 slides.forEach((s, i) => { if (i) { const f = el('div', 'foot'); f.append(el('span', '', D.title), el('span', '', `${i + 1} / ${slides.length}`)); s.appendChild(f); } });

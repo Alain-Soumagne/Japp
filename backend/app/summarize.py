@@ -49,6 +49,33 @@ EXTRAIT :
 {text}
 """
 
+LANG_NAMES = {"fr": "français", "en": "anglais", "de": "allemand", "ja": "japonais", "es": "espagnol",
+              "it": "italien", "pt": "portugais", "zh": "chinois", "ko": "coréen", "auto": "langue non précisée"}
+
+EXTRACT_PROMPT_OTHER = """Tu es un assistant de synthèse. Voici un EXTRAIT (partie {i}/{n}) de la transcription automatique (Whisper) d'un enregistrement audio : {nature}. Langue parlée : {lang}.
+La transcription contient des erreurs : corrige-les avec ton bon sens.
+Produis en JSON, EN FRANÇAIS, la synthèse de CET extrait :
+- sections : une par sujet ou notion abordé, avec key_points (idées, règles, décisions ou faits importants, formulés de façon courte et exacte) ;
+- examples : UNIQUEMENT si l'enregistrement enseigne une langue ou cite des phrases exemples : « quote » = la phrase telle qu'elle est dite dans sa langue d'origine, recopiée MOT POUR MOT depuis l'extrait (jamais inventée), « french » = sa traduction en français. Sinon, mets une liste vide ;
+- homework : actions à mener, décisions, devoirs ou conseils présents dans l'extrait (liste vide sinon).
+Règles de forme STRICTES : texte brut (pas de markdown, pas de **, pas de LaTeX, pas de $) ; n'invente rien qui ne soit dans l'extrait ; n'écris jamais de japonais s'il n'est pas dans l'extrait.
+Si l'enregistrement enseigne la langue {lang} (grammaire, vocabulaire), les notions concernent cette langue et NON le français : garde les termes de la langue d'origine entre guillemets (« past simple », « Perfekt »…) sans les traduire en faux-amis (le « past simple » anglais n'est pas le « passé simple » français).
+
+EXTRAIT :
+{text}
+"""
+
+GROUP_PROMPT_OTHER = """Voici la liste numérotée des sections extraites d'un enregistrement audio ({nature}), avec des doublons et des sections trop fines.
+Regroupe-les en {k} sections finales logiques, dans l'ordre de l'enregistrement. Chaque section finale a un titre court et la liste des numéros des sections sources qu'elle absorbe (chaque numéro dans UN seul groupe, aucun oublié).
+Donne aussi un titre et un sous-titre pour la synthèse complète. Texte brut, en français.
+Langue parlée dans l'enregistrement : {lang}. Si le contenu enseigne cette langue, le titre doit le dire (ex. « Anglais : … ») ; ne la confonds pas avec le français.
+
+SECTIONS :
+{listing}
+"""
+
+NATURE = {"other": "réunion, cours, conférence, entretien ou autre contenu parlé"}
+
 GROUP_PROMPT = """Voici la liste numérotée des sections extraites d'un cours de japonais, avec des doublons et des sections trop fines.
 Regroupe-les en 6 à 8 sections finales logiques, dans l'ordre du cours. Chaque section finale a un titre court et la liste des numéros des sections sources qu'elle absorbe (chaque numéro dans UN seul groupe, aucun oublié).
 Donne aussi un titre et un sous-titre pour la synthèse complète. Texte brut, en français.
@@ -100,9 +127,9 @@ def looks_french(q):
     return sum(w in _FR for w in norm(q).split()) >= 2
 
 
-def quote_ok(quote, norm_lines, norm_all):
+def quote_ok(quote, norm_lines, norm_all, allow_french=False):
     q = norm(quote)
-    if len(q) < 4 or looks_french(quote):
+    if len(q) < 4 or (not allow_french and looks_french(quote)):
         return False
     if q in norm_all:
         return True
@@ -149,8 +176,10 @@ def romaji_to_kana(text):
 
 
 # ---------- pipeline ----------
-def summarize(text: str, model: str, on_progress=None) -> dict:
-    """Transcription (texte brut, 1 segment/ligne) -> synthèse structurée validée."""
+def summarize(text: str, model: str, on_progress=None, kind: str = "course", lang: str = "auto") -> dict:
+    """Transcription (texte brut, 1 segment/ligne) -> synthèse structurée validée.
+    kind : « course » (cours de japonais : exemples en kana/romaji) ou « other » (contenu générique, citations dans la langue d'origine)."""
+    other = kind == "other"
     lines = [l for l in text.splitlines() if l.strip()]
     n_lines = [norm(l) for l in lines]
     n_all = " ".join(n_lines)
@@ -161,15 +190,23 @@ def summarize(text: str, model: str, on_progress=None) -> dict:
     for i, part in enumerate(parts, 1):
         if on_progress:
             on_progress((i - 1) / (len(parts) + 1), f"Synthèse : extraction {i}/{len(parts)}…")
-        d = call(model, EXTRACT_PROMPT.format(text="\n".join(part), i=i, n=len(parts)), EXTRACT_SCHEMA)
+        if other:
+            prompt = EXTRACT_PROMPT_OTHER.format(text="\n".join(part), i=i, n=len(parts), nature=NATURE["other"],
+                                                 lang=LANG_NAMES.get(lang, lang))
+        else:
+            prompt = EXTRACT_PROMPT.format(text="\n".join(part), i=i, n=len(parts))
+        d = call(model, prompt, EXTRACT_SCHEMA)
         for s in d["sections"]:
             exs = []
             for e in s["examples"]:
                 stats["examples_total"] += 1
-                if quote_ok(e["quote"], n_lines, n_all):
+                if quote_ok(e["quote"], n_lines, n_all, allow_french=other):
                     stats["examples_kept"] += 1
-                    exs.append({"romaji": clean(e["quote"]), "japanese": romaji_to_kana(clean(e["quote"])),
-                                "french": clean(e["french"])})
+                    if other:    # citation dans la langue d'origine : aucune conversion en kana
+                        exs.append({"source": clean(e["quote"]), "french": clean(e["french"])})
+                    else:
+                        exs.append({"romaji": clean(e["quote"]), "japanese": romaji_to_kana(clean(e["quote"])),
+                                    "french": clean(e["french"])})
             raw.append({"title": clean(s["title"]), "key_points": [clean(k) for k in s["key_points"] if k.strip()],
                         "examples": exs})
         homework += [clean(h) for h in d["homework"]]
@@ -177,7 +214,11 @@ def summarize(text: str, model: str, on_progress=None) -> dict:
     if on_progress:
         on_progress(len(parts) / (len(parts) + 1), "Synthèse : regroupement des sections…")
     listing = "\n".join(f"{k}. {s['title']} — " + " / ".join(s["key_points"])[:160] for k, s in enumerate(raw))
-    g = call(model, GROUP_PROMPT.format(listing=listing), GROUP_SCHEMA)
+    if other:
+        k = "3 à 8" if len(raw) > 5 else "2 à 4"
+        g = call(model, GROUP_PROMPT_OTHER.format(listing=listing, nature=NATURE["other"], k=k, lang=LANG_NAMES.get(lang, lang)), GROUP_SCHEMA)
+    else:
+        g = call(model, GROUP_PROMPT.format(listing=listing), GROUP_SCHEMA)
     seen, sections = set(), []
     for grp in g["groups"]:
         pts, exs = [], []
@@ -189,7 +230,7 @@ def summarize(text: str, model: str, on_progress=None) -> dict:
                 if norm(p) not in {norm(x) for x in pts}:
                     pts.append(p)
             for e in raw[m]["examples"]:
-                if norm(e["romaji"]) not in {norm(x["romaji"]) for x in exs}:
+                if norm(e.get("romaji") or e.get("source", "")) not in {norm(x.get("romaji") or x.get("source", "")) for x in exs}:
                     exs.append(e)
         if pts:
             sections.append({"title": clean(grp["title"]), "key_points": pts, "examples": exs})
@@ -197,4 +238,4 @@ def summarize(text: str, model: str, on_progress=None) -> dict:
         if k not in seen:
             sections.append(raw[k])
     return {"title": clean(g["title"]), "subtitle": clean(g["subtitle"]), "sections": sections,
-            "homework": list(dict.fromkeys(h for h in homework if h)), "stats": stats, "model": model}
+            "homework": list(dict.fromkeys(h for h in homework if h)), "stats": stats, "model": model, "kind": kind}

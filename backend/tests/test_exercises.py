@@ -183,13 +183,49 @@ def test_vue_publique_ne_divulgue_rien_avant_correction():
     assert "reference" in ex.public_view(s)["questions"][0]
 
 
-def test_quota_de_questions_du_modele_meme_a_bas_niveau():
+def test_repartition_equitable_entre_types():
     pool = [{"type": "reading", "difficulty": 1.0 + i / 10, "key": f"r{i}"} for i in range(20)]
     pool += [{"type": "mcq", "difficulty": 6.0, "key": None}] * 3 + [{"type": "short", "difficulty": 7.0, "key": None}] * 2
-    chosen = ex.pick(pool, 8, 1.5)
-    assert len(chosen) == 8 and sum(q["type"] in ("mcq", "short") for q in chosen) == 2
+    pool += [{"type": "kanji_reading", "difficulty": 3.0, "key": f"k{i}"} for i in range(6)]
+    chosen = ex.pick(pool, 9, 1.5)
+    from collections import Counter
+    c = Counter("model" if q["type"] in ("mcq", "short") else q["type"] for q in chosen)
+    assert len(chosen) == 9 and c == {"reading": 3, "kanji_reading": 3, "model": 3}
+
+
+def test_type_manquant_redistribue_aux_autres():
+    pool = [{"type": "reading", "difficulty": 2.0, "key": f"r{i}"} for i in range(10)] + [{"type": "cloze", "difficulty": 3.0, "key": "c"}]
+    chosen = ex.pick(pool, 8, 2.0)
+    assert len(chosen) == 8 and sum(q["type"] == "cloze" for q in chosen) == 1
 
 
 def test_pick_sans_question_du_modele():
     pool = [{"type": "reading", "difficulty": 2.0, "key": f"r{i}"} for i in range(10)]
     assert len(ex.pick(pool, 6, 2.0)) == 6
+
+
+# ------------------------------------------------------------ lecture des kanji (issue #7)
+VOC = [
+    {"id": "a", "word": "学生", "kana": "がくせい", "romaji": "gakusei", "french": "étudiant", "has_kanji": True},
+    {"id": "b", "word": "ありがとう", "kana": "ありがとう", "romaji": "arigatou", "french": "merci", "has_kanji": False},
+    {"id": "c", "word": "日本語", "kana": "にほんご", "romaji": "nihongo", "french": "japonais (langue)", "has_kanji": True},
+]
+
+
+def test_questions_kanji_uniquement_pour_les_mots_avec_kanji():
+    qs = ex.questions_from_vocabulary("j", "Cours", VOC, 4.0)
+    assert [q["prompt"] for q in qs] == ["学生", "日本語"]
+    assert all(q["type"] == "kanji_reading" and 1 <= q["difficulty"] <= 10 for q in qs)
+    assert qs[1]["difficulty"] > qs[0]["difficulty"]            # 3 kanji > 2 kanji
+
+
+@pytest.mark.parametrize("rep", ["がくせい", "ガクセイ", "gakusei", "Gakusei."])
+def test_lecture_kanji_acceptee(rep):
+    q = ex.questions_from_vocabulary("j", "C", VOC, 4.0)[0]
+    assert ex.grade_auto(q, rep)[0] == "correct"
+
+
+def test_lecture_kanji_fausse_donne_la_bonne_lecture():
+    q = ex.questions_from_vocabulary("j", "C", VOC, 4.0)[0]
+    v, fb = ex.grade_auto(q, "sensei")
+    assert v == "incorrect" and "がくせい" in fb

@@ -17,6 +17,7 @@ class ExampleIn(BaseModel):
     japanese: str = Field(default="", max_length=400)
     romaji: str = Field(default="", max_length=400)
     french: str = Field(default="", max_length=400)
+    source: str = Field(default="", max_length=400)      # citation d'un contenu « autre » (langue d'origine)
 
     @field_validator("*")
     @classmethod
@@ -67,7 +68,7 @@ def normalize(body: SyntheseIn) -> dict:
     """Retire les lignes vides : un exemple sans japonais ni français, une section sans titre."""
     d = body.model_dump()
     d["sections"] = [
-        {**s, "examples": [e for e in s["examples"] if e["japanese"] or e["french"]]}
+        {**s, "examples": [e for e in s["examples"] if e["japanese"] or e["french"] or e["source"]]}
         for s in d["sections"] if s["title"]
     ]
     if not d["sections"]:

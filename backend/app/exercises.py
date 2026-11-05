@@ -19,7 +19,8 @@ from datetime import UTC, datetime
 from difflib import SequenceMatcher
 from pathlib import Path
 
-from . import jobs, levels, ollama_mgr
+from . import jobs, levels, ollama_mgr, vocabulary
+from .kana import has_kanji, loose
 from .config import DATA_DIR, JOBS_DIR, LLM_MODEL
 
 EX_DIR = DATA_DIR / "exercises"
@@ -29,10 +30,10 @@ PROFILE = EX_DIR / "profile.json"
 _lock = threading.RLock()
 
 MIN_COUNT, MAX_COUNT = 5, 30
+TYPES = ("translate_ja_fr", "translate_fr_ja", "cloze", "kanji_reading", "reading", "model")
 GPU_WAIT_S = 600
 PARTICLES = {"は": {"wa", "ha"}, "が": {"ga"}, "を": {"o", "wo"}, "に": {"ni"}, "で": {"de"}, "の": {"no"},
              "も": {"mo"}, "と": {"to"}, "へ": {"e", "he"}}
-_PUNCT = re.compile(r"[\s、。，．,.!?！？「」『』\"'‘’“”・〜~…ー\-()（）:;：；]")
 HIDDEN = {"reference", "accepted", "explanation", "choice_ok", "key"}
 
 
@@ -103,27 +104,7 @@ def public_view(s: dict) -> dict:
     return {**{k: v for k, v in s.items() if k != "questions"}, "questions": qs}
 
 
-# ------------------------------------------------------------------ normalisation des réponses japonaises
-def _kata_to_hira(s: str) -> str:
-    return "".join(chr(ord(c) - 0x60) if "ァ" <= c <= "ヶ" else c for c in s)
-
-
-def loose(text: str) -> str:
-    """Clé de comparaison tolérante : kana/romaji équivalents, ponctuation et voyelles longues ignorées."""
-    from .summarize import romaji_to_kana
-    s = unicodedata.normalize("NFKC", text or "").lower()
-    if re.search(r"[a-zāīūēō]", s) and not re.search(r"[\u3040-\u30ff\u4e00-\u9fff]", s):
-        s = romaji_to_kana(s)
-    s = _PUNCT.sub("", _kata_to_hira(s))
-    s = s.replace("は", "わ").replace("を", "お").replace("へ", "え").replace("ぢ", "じ").replace("づ", "ず")
-    # voyelles longues ignorées (les élèves omettent souvent les macrons) : こう = こ, かあ = か, きい = き…
-    s = re.sub(r"([おこそとのほもよろをごぞどぼぽょ])[うお]", r"\1", s)
-    s = re.sub(r"([うくすつぬふむゆるぐずづぶぷゅ])う", r"\1", s)
-    s = re.sub(r"([あかさたなはまやらわがざだばぱゃ])あ", r"\1", s)
-    s = re.sub(r"([いきしちにひみりぎじびぴ])い", r"\1", s)
-    return re.sub(r"([えけせてねへめれげぜでべぺ])[えい]", r"\1", s)
-
-
+# ------------------------------------------------------------------ normalisation des réponses
 def _plain(s: str) -> str:
     s = unicodedata.normalize("NFKD", (s or "").lower())
     return re.sub(r"[^a-z0-9]+", " ", "".join(c for c in s if not unicodedata.combining(c))).strip()
@@ -176,6 +157,22 @@ def questions_from_examples(job_id: str, course_name: str, synthese: dict, cours
     return out
 
 
+def questions_from_vocabulary(job_id: str, course_name: str, entries: list[dict], course_diff: float) -> list[dict]:
+    """« Lecture des kanji » : un mot écrit avec des kanji, l'élève donne sa lecture (kana ou romaji)."""
+    out = []
+    for e in entries:
+        w, kana, ro = e.get("word", ""), e.get("kana", ""), e.get("romaji", "")
+        if not e.get("has_kanji") or not has_kanji(w) or not kana:
+            continue
+        ed = levels.clamp(2.0 + 1.6 * sum(1 for c in w if has_kanji(c)), 1.0, 10.0)
+        out.append({"job_id": job_id, "course": course_name, "section": "Vocabulaire", "key": "vocab:" + w,
+                    "type": "kanji_reading", "prompt": w, "hint": "Écris la lecture en hiragana (ou en romaji).",
+                    "reference": f"{kana}  ({ro})" if ro else kana, "accepted": [x for x in (kana, ro) if x],
+                    "explanation": f"{w} se lit {kana} : {e.get('french', '')}",
+                    "difficulty": levels.question_difficulty("kanji_reading", ed, course_diff)})
+    return out
+
+
 # ------------------------------------------------------------------ questions générées par le modèle (QCM / réponse courte)
 _QSCHEMA = {"type": "object", "properties": {"questions": {"type": "array", "items": {
     "type": "object",
@@ -183,6 +180,18 @@ _QSCHEMA = {"type": "object", "properties": {"questions": {"type": "array", "ite
                    "choices": {"type": "array", "items": {"type": "string"}}, "answer_index": {"type": "integer"},
                    "reference_answer": {"type": "string"}, "explanation": {"type": "string"}, "section": {"type": "string"}},
     "required": ["type", "question", "explanation"]}}}, "required": ["questions"]}
+
+_QPROMPT_OTHER = """Tu es un formateur. À partir UNIQUEMENT du contenu ci-dessous (réunion, cours ou conférence), écris {n_mcq} QCM et {n_short} questions à réponse courte, en français.
+Règles :
+- chaque question doit avoir sa réponse dans le contenu (aucune connaissance extérieure) ;
+- QCM : 4 choix courts, une seule bonne réponse (answer_index = position de 0 à 3), des mauvais choix plausibles ;
+- question courte : une réponse d'une phrase au plus, à donner dans reference_answer ;
+- explanation : une phrase qui justifie la réponse d'après le contenu ;
+- section : le titre du sujet concerné.
+
+CONTENU « {title} » :
+{content}
+"""
 
 _QPROMPT = """Tu es un professeur de japonais. À partir UNIQUEMENT du contenu du cours ci-dessous, écris {n_mcq} QCM et {n_short} questions à réponse courte, en français.
 Règles :
@@ -202,13 +211,15 @@ def _course_text(syn: dict, limit: int = 7000) -> str:
     for s in syn.get("sections") or []:
         lines.append(f"## {s.get('title', '')}")
         lines += [f"- {p}" for p in s.get("key_points") or []]
-        lines += [f"  ex : {e.get('japanese', '')} / {e.get('romaji', '')} / {e.get('french', '')}" for e in s.get("examples") or []]
+        lines += [(f"  ex : {e['source']} / {e.get('french', '')}" if e.get("source")
+                   else f"  ex : {e.get('japanese', '')} / {e.get('romaji', '')} / {e.get('french', '')}") for e in s.get("examples") or []]
     return "\n".join(lines)[:limit]
 
 
-def questions_from_model(model: str, job_id: str, course_name: str, syn: dict, course_diff: float, n_mcq: int, n_short: int) -> list[dict]:
+def questions_from_model(model: str, job_id: str, course_name: str, syn: dict, course_diff: float, n_mcq: int, n_short: int,
+                         kind: str = "course") -> list[dict]:
     from .summarize import call
-    data = call(model, _QPROMPT.format(n_mcq=n_mcq, n_short=n_short, title=course_name, content=_course_text(syn)), _QSCHEMA)
+    data = call(model, (_QPROMPT_OTHER if kind == "other" else _QPROMPT).format(n_mcq=n_mcq, n_short=n_short, title=course_name, content=_course_text(syn)), _QSCHEMA)
     out = []
     for q in data.get("questions", []):
         text = (q.get("question") or "").strip()
@@ -243,13 +254,13 @@ def grade_auto(q: dict, answer: str) -> tuple[str, str] | None:
     if t == "mcq":
         ok = a == q["accepted"][0]
         return ("correct", "Bonne réponse.") if ok else ("incorrect", f"La bonne réponse était : {q['reference']}.")
-    if t in ("cloze", "reading", "translate_fr_ja"):
+    if t in ("cloze", "reading", "translate_fr_ja", "kanji_reading"):
         mine = loose(a)
         if mine and any(mine == loose(x) for x in q["accepted"] if x):
             return "correct", "Correct."
-        if t == "reading":
+        if t in ("reading", "kanji_reading"):
             best = max((SequenceMatcher(None, mine, loose(x)).ratio() for x in q["accepted"] if x), default=0)
-            return ("partial", "Presque : une petite erreur de lecture.") if best >= 0.85 else ("incorrect", "Ce n'est pas la bonne lecture.")
+            return ("partial", "Presque : une petite erreur de lecture.") if best >= 0.85 else ("incorrect", f"Ce n'est pas la bonne lecture : {q['reference']}.")
         if t == "cloze":
             return "incorrect", f"La particule attendue était « {q['reference']} »."
         return None      # traduction vers le japonais : plusieurs formulations possibles -> le modèle juge
@@ -269,7 +280,7 @@ _JSCHEMA = {"type": "object", "properties": {"results": {"type": "array", "items
     "type": "object", "properties": {"id": {"type": "string"}, "verdict": {"type": "string", "enum": ["correct", "partial", "incorrect"]},
                                      "feedback": {"type": "string"}}, "required": ["id", "verdict", "feedback"]}}}, "required": ["results"]}
 
-_JPROMPT = """Tu es un correcteur de japonais, juste et bienveillant. Pour chaque item, compare la RÉPONSE de l'élève à la RÉFÉRENCE tirée du cours.
+_JPROMPT = """Tu es un correcteur (japonais ou autre matière), juste et bienveillant. Pour chaque item, compare la RÉPONSE de l'élève à la RÉFÉRENCE tirée du cours.
 - correct : même sens (synonymes, ordre des mots, ponctuation, majuscules, petites fautes de frappe ou d'orthographe acceptés) ;
 - partial : une partie seulement du sens ou une erreur notable ;
 - incorrect : sens différent ou absent.
@@ -290,7 +301,7 @@ def _judge(model: str, items: list[dict]) -> dict[str, tuple[str, str]]:
     return {r["id"]: (r["verdict"], r["feedback"].strip()[:400]) for r in data.get("results", []) if r.get("verdict") in levels.POINTS}
 
 
-_CPROMPT = """Tu es un correcteur de japonais impartial. Un élève conteste une correction. Réexamine la question avec le contenu du cours sous les yeux.
+_CPROMPT = """Tu es un correcteur impartial (japonais ou autre matière). Un élève conteste une correction. Réexamine la question avec le contenu du cours sous les yeux.
 - Ne change de verdict QUE si l'argument est correct d'après le cours ou la langue japonaise. L'insistance n'est pas un argument.
 - Si la question elle-même est ambiguë ou si une autre réponse est réellement valable, reconnais-le.
 - Réponds en français, de façon courte et respectueuse. Ta décision est finale.
@@ -342,20 +353,26 @@ def eligible_courses() -> list[dict]:
         except (OSError, ValueError):
             continue
         n_ex = sum(len(s.get("examples") or []) for s in syn.get("sections") or [])
-        out.append({"id": j["id"], "name": j["name"], "difficulty": levels.course_difficulty(syn),
-                    "examples": n_ex, "sections": len(syn.get("sections") or [])})
+        kind = syn.get("kind") or j.get("kind", "course")
+        voc = vocabulary.load(JOBS_DIR / j["id"]) if kind == "course" else None
+        out.append({"id": j["id"], "name": j["name"], "difficulty": levels.course_difficulty(syn), "kind": kind,
+                    "examples": n_ex, "sections": len(syn.get("sections") or []),
+                    "kanji_words": sum(1 for e in voc or [] if e.get("has_kanji")), "vocabulary": voc is not None})
     return out
 
 
-def create_session(job_ids: list[str], count: int, model: str) -> dict:
+def create_session(job_ids: list[str], count: int, model: str, types: list[str] | None = None) -> dict:
     avail = {c["id"]: c for c in eligible_courses()}
     ids = list(dict.fromkeys(job_ids))
     if not ids or any(i not in avail for i in ids):
         raise ValueError("Choisis au moins un cours terminé et disponible.")
+    types = [t for t in dict.fromkeys(types or TYPES) if t in TYPES]
+    if not types:
+        raise ValueError("Choisis au moins un type de question.")
     count = int(levels.clamp(count, MIN_COUNT, MAX_COUNT))
     sid = uuid.uuid4().hex[:10]
     s = {"id": sid, "created": time.time(), "updated": time.time(), "status": "generating", "message": "Préparation…",
-         "error": None, "notice": "", "job_ids": ids, "course_names": [avail[i]["name"] for i in ids], "count": count,
+         "error": None, "notice": "", "types": types, "job_ids": ids, "course_names": [avail[i]["name"] for i in ids], "count": count,
          "model": model or LLM_MODEL, "level_at_start": profile()["level"], "questions": [], "result": None}
     save_session(s)
     threading.Thread(target=_run, args=(_generate, sid), daemon=True, name=f"ex-gen-{sid}").start()
@@ -374,49 +391,80 @@ def _run(fn, sid: str, *args) -> None:
 
 def _generate(s: dict) -> None:
     level = s["level_at_start"]
+    types = set(s.get("types") or TYPES)
     pool: list[dict] = []
-    syns: dict[str, tuple[str, dict, float]] = {}
+    courses: dict[str, tuple[str, dict, float, str]] = {}
+    notes: list[str] = []
     for jid in s["job_ids"]:
         name = jobs.get(jid)["name"] if jobs.get(jid) else jid
         syn = json.loads((JOBS_DIR / jid / "synthese.json").read_text(encoding="utf-8"))
+        kind = syn.get("kind") or (jobs.get(jid) or {}).get("kind", "course")
         cd = levels.course_difficulty(syn)
-        syns[jid] = (name, syn, cd)
-        pool += questions_from_examples(jid, name, syn, cd)
+        courses[jid] = (name, syn, cd, kind)
+        if kind == "course":
+            pool += [q for q in questions_from_examples(jid, name, syn, cd) if q["type"] in types]
+            if "kanji_reading" in types:
+                voc = vocabulary.load(JOBS_DIR / jid)
+                found = questions_from_vocabulary(jid, name, voc or [], cd)
+                pool += found
+                if not found:
+                    notes.append(f"« {name} » n'a pas de mot avec kanji dans son vocabulaire"
+                                 + ("" if voc is not None else " (génère-le dans l'onglet Vocabulaire)") + ".")
 
-    notice = ""
-    wanted = max(2, -(-int(s["count"] * 0.4) // len(s["job_ids"])))
-    try:
-        _acquire_gpu()
+    # questions écrites par le modèle : demandées, ou seul moyen d'interroger un contenu « autre »
+    model_courses = [j for j, (_, _, _, k) in courses.items() if "model" in types or k == "other"]
+    if any(k == "other" for (_, _, _, k) in courses.values()) and "model" not in types:
+        notes.append("Les contenus « autre » ne peuvent être interrogés que par des questions écrites par le modèle : elles ont été ajoutées.")
+    active = {q["type"] for q in pool}
+    share = max(1, len(active) + (1 if model_courses else 0))
+    if model_courses:
+        wanted = max(2, -(-s["count"] // share // len(model_courses))) + 1
         try:
-            _with_model(s["model"], lambda m: (s.update(message=m), save_session(s)))
-            for k, (jid, (name, syn, cd)) in enumerate(syns.items(), 1):
-                s.update(message=f"Le modèle écrit des questions ({k}/{len(syns)})…")
-                save_session(s)
-                n_short = max(1, wanted // 3)
-                pool += questions_from_model(s["model"], jid, name, syn, cd, wanted - n_short, n_short)
-        finally:
-            jobs.GPU_LOCK.release()
-    except Exception as e:  # noqa: BLE001 - Ollama absent / modèle manquant : on continue avec les questions du cours
-        notice = f"Questions générées par l'IA indisponibles ({e}). La session ne contient que des questions tirées des exemples du cours."
+            _acquire_gpu()
+            try:
+                _with_model(s["model"], lambda m: (s.update(message=m), save_session(s)))
+                for k, jid in enumerate(model_courses, 1):
+                    name, syn, cd, kind = courses[jid]
+                    s.update(message=f"Le modèle écrit des questions ({k}/{len(model_courses)})…")
+                    save_session(s)
+                    n_short = max(1, wanted // 3)
+                    pool += questions_from_model(s["model"], jid, name, syn, cd, wanted - n_short, n_short, kind)
+            finally:
+                jobs.GPU_LOCK.release()
+        except Exception as e:  # noqa: BLE001 - Ollama absent / modèle manquant : on continue avec les questions du cours
+            notes.append(f"Questions écrites par l'IA indisponibles ({e}).")
     if not pool:
-        raise RuntimeError("Ces cours ne contiennent pas assez d'exemples pour créer des questions.")
+        raise RuntimeError("Aucune question possible avec ces cours et ces types. " + " ".join(notes))
     chosen = pick(pool, s["count"], level)
     for i, q in enumerate(chosen, 1):
         q.update(id=f"q{i}", answer="")
-    s.update(questions=chosen, status="ready", message="Prête", notice=notice, count=len(chosen))
+    s.update(questions=chosen, status="ready", message="Prête", notice=" ".join(notes), count=len(chosen))
     save_session(s)
 
 
-MODEL_SHARE = 0.25     # part minimale de questions écrites par le modèle (QCM / questions courtes), si disponibles
-
-
 def pick(pool: list[dict], n: int, level: float) -> list[dict]:
-    """Réserve un quota aux questions du modèle : sinon, à bas niveau, les petites phrases d'exemple les évincent toujours."""
-    model = [q for q in pool if q["type"] in ("mcq", "short")]
-    other = [q for q in pool if q["type"] not in ("mcq", "short")]
-    k = min(len(model), max(1, round(n * MODEL_SHARE))) if model else 0
-    k = min(k, n - 1) if other else min(k, n)
-    chosen = levels.select_questions(model, k, level) + levels.select_questions(other, n - k, level) if k else levels.select_questions(pool, n, level)
+    """Répartit les questions équitablement entre les types présents, puis suit le niveau à l'intérieur de chaque type."""
+    groups: dict[str, list[dict]] = {}
+    for q in pool:
+        groups.setdefault("model" if q["type"] in ("mcq", "short") else q["type"], []).append(q)
+    n = min(n, len(pool))
+    alloc = dict.fromkeys(groups, 0)
+    order = sorted(groups, key=lambda g: -len(groups[g]))
+    left = n
+    while left > 0:
+        moved = False
+        for g in order:
+            if left and alloc[g] < len(groups[g]):
+                alloc[g] += 1
+                left -= 1
+                moved = True
+        if not moved:
+            break
+    chosen: list[dict] = []
+    seen: set[str] = set()                       # une même phrase n'est pas posée sous plusieurs formes si on peut l'éviter
+    for g in order:
+        if alloc[g]:
+            chosen += levels.select_questions(groups[g], alloc[g], level, avoid=seen)
     random.shuffle(chosen)
     return chosen
 

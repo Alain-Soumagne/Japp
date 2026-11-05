@@ -2,7 +2,10 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
+export type ContentKind = 'course' | 'other';
+
 export interface Job {
+  kind?: ContentKind;
   id: string;
   name: string;
   source: string;
@@ -21,12 +24,13 @@ export interface Job {
   info: { language?: string; duration?: number };
 }
 
-export interface Example { japanese: string; romaji: string; french: string }
+export interface Example { japanese?: string; romaji?: string; french: string; source?: string }
 export interface Section { title: string; key_points: string[]; examples: Example[] }
 export interface Summary {
   title: string;
   subtitle: string;
   model?: string;
+  kind?: ContentKind;
   stats?: { examples_total: number; examples_kept: number; edited?: boolean };
   sections: Section[];
   homework: string[];
@@ -43,6 +47,7 @@ export interface Health {
 }
 
 export interface NewJobOptions {
+  kind: ContentKind;
   lang: string;
   model: string;
   prompt: string;
@@ -76,7 +81,7 @@ export class ApiService {
   readonly health = signal<Health | null>(null);
   readonly backendUp = signal<boolean>(true);
   readonly selectedId = signal<string | null>(null);
-  readonly view = signal<'courses' | 'exercises'>('courses');
+  readonly view = signal<'courses' | 'exercises' | 'vocabulary'>('courses');
   readonly selected = computed(() => this.jobs().find((j) => j.id === this.selectedId()) ?? null);
   readonly busy = computed(() => this.jobs().some((j) => j.status === 'queued' || j.status === 'running'));
 
@@ -114,6 +119,7 @@ export class ApiService {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('lang', opts.lang);
+      fd.append('kind', opts.kind);
       fd.append('model', opts.model);
       fd.append('prompt', opts.prompt);
       job = await firstValueFrom(this.http.post<Job>(`${this.base}/jobs`, fd));

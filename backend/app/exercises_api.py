@@ -40,6 +40,7 @@ class NewSession(BaseModel):
     job_ids: list[str] = Field(min_length=1, max_length=20)
     count: int = Field(default=10, ge=exercises.MIN_COUNT, le=exercises.MAX_COUNT)
     model: str = Field(default="", max_length=101)
+    types: list[str] = Field(default_factory=lambda: list(exercises.TYPES), min_length=1, max_length=10)
 
 
 @router.post("/sessions")
@@ -48,7 +49,9 @@ def create(body: NewSession) -> dict:
     if body.model and not MODEL_RE.match(body.model):
         raise HTTPException(422, "Nom de modèle invalide")
     try:
-        return _view(exercises.create_session(body.job_ids, body.count, body.model))
+        if any(t not in exercises.TYPES for t in body.types):
+            raise HTTPException(422, "Type de question inconnu")
+        return _view(exercises.create_session(body.job_ids, body.count, body.model, body.types))
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
 

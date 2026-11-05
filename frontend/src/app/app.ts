@@ -1,25 +1,38 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ApiService, Job } from './api.service';
+import { ApiService, ContentKind, Job } from './api.service';
 import { JobView } from './job-view';
 import { Exercises } from './exercises';
+import { VocabularyPage } from './vocabulary';
 import { UpdateService } from './update.service';
 
-const LANGS = [
-  { id: 'auto', label: 'Automatique' },
-  { id: 'fr', label: 'Français (mots japonais en romaji)' },
-  { id: 'ja', label: 'Japonais' },
-];
+const LANGS: Record<ContentKind, { id: string; label: string }[]> = {
+  course: [
+    { id: 'auto', label: 'Automatique' },
+    { id: 'fr', label: 'Français (mots japonais en romaji)' },
+    { id: 'ja', label: 'Japonais' },
+    { id: 'en', label: 'Anglais' },
+    { id: 'de', label: 'Allemand' },
+  ],
+  other: [
+    { id: 'auto', label: 'Automatique' },
+    { id: 'fr', label: 'Français' },
+    { id: 'en', label: 'Anglais' },
+    { id: 'de', label: 'Allemand' },
+    { id: 'ja', label: 'Japonais' },
+  ],
+};
 
 @Component({
   selector: 'app-root',
-  imports: [JobView, Exercises],
+  imports: [JobView, Exercises, VocabularyPage],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
   readonly api = inject(ApiService);
   readonly upd = inject(UpdateService);
-  readonly langs = LANGS;
+  readonly kind = signal<ContentKind>('course');
+  readonly langs = computed(() => LANGS[this.kind()]);
   readonly lang = signal('fr');
   readonly model = signal('');
   readonly prompt = signal('');
@@ -57,7 +70,7 @@ export class App {
     this.error.set('');
     for (const f of files) {
       try {
-        await this.api.addFile(f, { lang: this.lang(), model: this.model(), prompt: this.prompt() });
+        await this.api.addFile(f, { kind: this.kind(), lang: this.lang(), model: this.model(), prompt: this.prompt() });
       } catch (e) {
         this.error.set(`Impossible d'ajouter « ${f.name} » : ${(e as Error).message}`);
       }
@@ -78,7 +91,7 @@ export class App {
     this.error.set('');
     this.ytBusy.set(true);
     try {
-      await this.api.addYoutube(url, { lang: this.lang(), model: this.model(), prompt: this.prompt() });
+      await this.api.addYoutube(url, { kind: this.kind(), lang: this.lang(), model: this.model(), prompt: this.prompt() });
       this.ytUrl.set('');
     } catch (e) {
       const d = (e as { error?: { detail?: string } }).error?.detail;
@@ -109,6 +122,10 @@ export class App {
     }
   }
 
+  setKind(k: ContentKind): void {
+    this.kind.set(k);
+    if (!LANGS[k].some((l) => l.id === this.lang())) this.lang.set('fr');   // ex. « français + kana » n'existe que pour un cours de japonais
+  }
   setLang(e: Event): void { this.lang.set((e.target as HTMLSelectElement).value); }
   setModel(e: Event): void { this.model.set((e.target as HTMLSelectElement).value); }
   setPrompt(e: Event): void { this.prompt.set((e.target as HTMLTextAreaElement).value); }

@@ -37,7 +37,8 @@ EXTRA_ORIGINS = {o.strip().rstrip("/") for o in os.environ.get("JAPP_DEV_ORIGINS
 MEDIA_EXT = {".mp3", ".m4a", ".aac", ".wav", ".flac", ".ogg", ".opus", ".wma", ".aiff", ".mp4", ".mkv", ".mov",
              ".avi", ".webm", ".m4v", ".mpg", ".mpeg", ".ts", ".3gp"}
 MAX_UPLOAD = 20 * 1024 ** 3  # 20 Go
-LANGS = {"auto", "fr", "ja", "en"}
+LANGS = {"auto", "fr", "ja", "en", "de"}
+KINDS = {"course", "other"}
 MODEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,100}$")
 
 
@@ -89,12 +90,14 @@ def health() -> dict:
             "ollama": ollama_mgr.status(), "llm_default": LLM_MODEL, "llm_choices": LLM_CHOICES}
 
 
-def _check_options(lang: str, model: str, prompt: str) -> tuple[str, str, str]:
+def _check_options(lang: str, model: str, prompt: str, kind: str = "course") -> tuple[str, str, str, str]:
     if lang not in LANGS:
         raise HTTPException(422, "Langue non supportée")
+    if kind not in KINDS:
+        raise HTTPException(422, "Type de contenu inconnu")
     if model and not MODEL_RE.match(model):
         raise HTTPException(422, "Nom de modèle invalide")
-    return lang, model, prompt[:2000]
+    return lang, model, prompt[:2000], kind
 
 
 class FromPath(BaseModel):
@@ -102,17 +105,18 @@ class FromPath(BaseModel):
     lang: str = "auto"
     model: str = ""
     prompt: str = ""
+    kind: str = "course"
 
 
 @app.post("/jobs/from-path")
 def create_from_path(body: FromPath) -> dict:
-    lang, model, prompt = _check_options(body.lang, body.model, body.prompt)
+    lang, model, prompt, kind = _check_options(body.lang, body.model, body.prompt, body.kind)
     p = Path(body.path)
     if p.suffix.lower() not in MEDIA_EXT:
         raise HTTPException(415, "Type de fichier non supporté (audio/vidéo uniquement)")
     if not p.is_file():
         raise HTTPException(404, "Fichier introuvable")
-    return jobs.create(p.resolve(), p.stem, lang, model, prompt, copy=False)
+    return jobs.create(p.resolve(), p.stem, lang, model, prompt, copy=False, kind=kind)
 
 
 class FromYoutube(BaseModel):
@@ -120,21 +124,22 @@ class FromYoutube(BaseModel):
     lang: str = "auto"
     model: str = ""
     prompt: str = ""
+    kind: str = "course"
 
 
 @app.post("/jobs/youtube")
 def create_from_youtube(body: FromYoutube) -> dict:
-    lang, model, prompt = _check_options(body.lang, body.model, body.prompt)
+    lang, model, prompt, kind = _check_options(body.lang, body.model, body.prompt, body.kind)
     try:
-        return jobs.create_youtube(body.url, lang, model, prompt)
+        return jobs.create_youtube(body.url, lang, model, prompt, kind)
     except YoutubeError as e:
         raise HTTPException(422, str(e)) from e
 
 
 @app.post("/jobs")
 async def create_upload(file: UploadFile = File(...), lang: str = Form("auto"), model: str = Form(""),
-                        prompt: str = Form("")) -> dict:
-    lang, model, prompt = _check_options(lang, model, prompt)
+                        prompt: str = Form(""), kind: str = Form("course")) -> dict:
+    lang, model, prompt, kind = _check_options(lang, model, prompt, kind)
     safe = Path(file.filename or "cours").name
     ext = Path(safe).suffix.lower()
     if ext not in MEDIA_EXT:
@@ -151,7 +156,7 @@ async def create_upload(file: UploadFile = File(...), lang: str = Form("auto"), 
     except Exception:
         tmp.unlink(missing_ok=True)
         raise
-    return jobs.create(tmp, Path(safe).stem, lang, model, prompt, copy=True)
+    return jobs.create(tmp, Path(safe).stem, lang, model, prompt, copy=True, kind=kind)
 
 
 @app.get("/jobs")
@@ -279,8 +284,10 @@ def resummarize(job_id: str, body: ResumBody) -> dict:
 
 
 from .exercises_api import router as _exercises_router  # noqa: E402
+from .vocabulary_api import router as _vocabulary_router  # noqa: E402
 
 app.include_router(_exercises_router)
+app.include_router(_vocabulary_router)
 
 
 # --- Interface Angular servie par le backend (même origine -> pas de CORS, pas de souci de base href) ---

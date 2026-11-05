@@ -5,6 +5,7 @@
     <nav class="modes" aria-label="Section">
       <button [class.on]="api.view() === 'courses'" (click)="api.view.set('courses')">Cours</button>
       <button [class.on]="api.view() === 'exercises'" (click)="api.view.set('exercises')">Exercices</button>
+      <button [class.on]="api.view() === 'vocabulary'" (click)="api.view.set('vocabulary')">Vocabulaire</button>
     </nav>
 
     <button class="new" (click)="api.view.set('courses'); api.selectedId.set(null)">＋ Nouveau cours</button>
@@ -78,6 +79,8 @@
 
     @if (api.view() === 'exercises') {
       <app-exercises />
+    } @else if (api.view() === 'vocabulary') {
+      <app-vocabulary />
     } @else if (api.selected(); as j) {
       <app-job-view [job]="j" />
     } @else {
@@ -104,10 +107,22 @@
 
         @if (error()) { <p class="err">{{ error() }}</p> }
 
+        <fieldset class="kinds">
+          <legend>Type de contenu</legend>
+          <label class="kind" [class.on]="kind() === 'course'">
+            <input type="radio" name="kind" [checked]="kind() === 'course'" (change)="setKind('course')" />
+            <span><b>Cours de japonais</b><small>Notions, exemples en kana et romaji, vocabulaire, exercices</small></span>
+          </label>
+          <label class="kind" [class.on]="kind() === 'other'">
+            <input type="radio" name="kind" [checked]="kind() === 'other'" (change)="setKind('other')" />
+            <span><b>Autre contenu</b><small>Réunion, conférence, cours d'anglais ou d'une autre matière : synthèse générale, sans japonais</small></span>
+          </label>
+        </fieldset>
+
         <div class="opts">
-          <label>Langue du cours
+          <label>Langue parlée
             <select (change)="setLang($event)">
-              @for (l of langs; track l.id) { <option [value]="l.id" [selected]="l.id === lang()">{{ l.label }}</option> }
+              @for (l of langs(); track l.id) { <option [value]="l.id" [selected]="l.id === lang()">{{ l.label }}</option> }
             </select>
           </label>
           <label>Modèle de synthèse

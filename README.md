@@ -79,7 +79,8 @@ Pour gagner du temps, tu peux le préparer à l'avance dans un terminal : `ollam
    Formats : mp3, m4a, wav, flac, ogg, opus, mp4, mkv, mov, webm, avi…
    **Ou colle un lien YouTube** (vidéo *publique* ou *non répertoriée*) dans le champ situé sous la zone de dépôt, puis clique sur *Importer* : Japp télécharge uniquement l'audio, le transcrit, puis le supprime. Les vidéos privées, réservées aux membres, les playlists et les chaînes ne sont pas encore prises en charge.
 3. Avant de déposer, règle si besoin :
-   - **Langue du cours** — *Français* si le cours est en français avec des mots japonais (ils seront écrits en romaji) ; *Japonais* si tout est en japonais ; *Automatique* sinon.
+   - **Type de contenu** — *Cours de japonais* (notions, exemples en kana/romaji, vocabulaire, exercices) ou *Autre contenu* (réunion, conférence, cours d'anglais ou d'une autre matière : synthèse générale en français, citations dans la langue d'origine, sans japonais inventé).
+   - **Langue parlée** — *Français* (pour un cours de japonais, les mots japonais sont écrits en romaji par la transcription ; le kana et les kanji apparaissent dans les exemples de la synthèse et dans le vocabulaire), *Anglais*, *Allemand*, *Japonais* si tout est en japonais, ou *Automatique*. **Choisis la langue quand tu la connais** : la détection automatique peut se tromper (elle a pris un enregistrement allemand pour de l'anglais lors de nos essais).
    - **Modèle de synthèse** — `gemma4:12b` par défaut.
    - **Vocabulaire** (optionnel) — noms propres, termes techniques : aide Whisper à les reconnaître.
 4. Suis la progression : (téléchargement si lien YouTube →) transcription → modèle IA → synthèse → présentation. Une heure de cours demande quelques minutes sur une RTX récente (19 min d'audio ≈ 2 min sur RTX 5080).
@@ -90,11 +91,14 @@ Pour gagner du temps, tu peux le préparer à l'avance dans un terminal : `ollam
    - **Éditer** — corrige le titre, les points clés, les exemples et les devoirs ; **supprime** les notions (et donc les diapos) qui ne te servent pas, réordonne-les ou ajoute-en. *Enregistrer* régénère la présentation instantanément, sans IA. Ta version d'origine est conservée : *Restaurer la version de l'IA* la remet. Attention : *Régénérer la synthèse* écrase tes modifications.
    - Boutons de téléchargement : `.txt`, `.srt`, `.md`, `.json`, `.html`.
 
+### Vocabulaire (onglet « Vocabulaire »)
+Après chaque cours de japonais, Japp extrait le **vocabulaire** (mot en kanji, lecture en kana, romaji, traduction) et le rassemble pour tous tes cours : recherche, filtre par cours, filtre « seulement les kanji », export **CSV** (ouvrable dans Excel ou Anki). Un mot n'est gardé que s'il figure dans la transcription et si sa lecture est cohérente avec lui ; relis-le tout de même, et retire les mots inutiles avec ✕. Pour un cours traité avant cette fonction, clique sur *Extraire le vocabulaire*.
+
 ### Exercices (onglet « Exercices »)
 Une fois quelques cours traités, révise-les avec des exercices générés **par le modèle local**, uniquement à partir du contenu de tes cours :
 
-1. Choisis les cours à inclure et le nombre de questions (5 à 30).
-2. Réponds : traductions japonais ↔ français, lecture en romaji, particule manquante, QCM, questions courtes. Les réponses en japonais s'écrivent en kana, en kanji **ou en romaji** (les voyelles longues et la ponctuation sont tolérées).
+1. Choisis les cours à inclure, le nombre de questions (5 à 30) et les **types de questions** (cases à cocher, réparties équitablement) : traduction japonais → français, français → japonais, particule manquante, **lecture des kanji** (tirée du vocabulaire), lecture d'une phrase, questions écrites par le modèle. Ton choix est mémorisé.
+2. Réponds. Les réponses en japonais s'écrivent en kana, en kanji **ou en romaji** (les voyelles longues et la ponctuation sont tolérées).
 3. Envoie : les réponses fermées sont corrigées automatiquement, les réponses libres par le modèle. Si Ollama n'est pas disponible, une correction approximative (sans IA) prend le relais.
 4. **Conteste** une correction que tu estimes fausse : le modèle la réexamine une fois avec le cours sous les yeux, et sa décision est finale. Si tu restes en désaccord après réexamen, tu peux **exclure la question du score**.
 5. Clique sur **Terminer et valider mon score** : tu obtiens un score sur 100 et ton niveau évolue.

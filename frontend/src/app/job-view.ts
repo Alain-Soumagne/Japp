@@ -10,6 +10,7 @@ const STAGES: { id: string; label: string }[] = [
   { id: 'transcribing', label: 'Transcription' },
   { id: 'preparing_llm', label: 'Modèle IA' },
   { id: 'summarizing', label: 'Synthèse' },
+  { id: 'vocabulary', label: 'Vocabulaire' },
   { id: 'rendering', label: 'Présentation' },
 ];
 
@@ -22,7 +23,7 @@ const STAGES: { id: string; label: string }[] = [
       <div>
         <h2>{{ j.name }}</h2>
         <p class="meta">
-          {{ j.model }} · langue : {{ j.lang }}
+          {{ j.model }} · langue : {{ langLabel(j.lang) }}@if (j.kind === 'other') { · <b>autre contenu</b> }
           @if (j.info.duration) { · {{ minutes(j.info.duration) }} min }
           @if (j.info.language) { · détectée : {{ j.info.language }} }
         </p>
@@ -99,8 +100,8 @@ const STAGES: { id: string; label: string }[] = [
                 <article>
                   <h4>{{ sec.title }}</h4>
                   <ul>@for (p of sec.key_points; track p) { <li>{{ p }}</li> }</ul>
-                  @for (e of sec.examples; track e.romaji) {
-                    <div class="ex"><span class="jp">{{ e.japanese }}</span><span class="ro">{{ e.romaji }}</span><span>{{ e.french }}</span></div>
+                  @for (e of sec.examples; track $index) {
+                    <div class="ex"><span class="jp">{{ e.japanese || e.source }}</span><span class="ro">{{ e.romaji }}</span><span>{{ e.french }}</span></div>
                   }
                 </article>
               }
@@ -154,7 +155,7 @@ export class JobView {
   private sanitizer = inject(DomSanitizer);
   readonly job = input.required<Job>();
   stagesOf(j: Job) {
-    return j.url ? STAGES : STAGES.filter((s) => s.id !== 'downloading');
+    return STAGES.filter((s) => (j.url || s.id !== 'downloading') && (j.kind !== 'other' || s.id !== 'vocabulary'));
   }
 
   readonly tab = signal<Tab>('deck');
@@ -206,6 +207,10 @@ export class JobView {
 
   onSaved(): void {
     this.api.refresh();      // met à jour la tâche : la présentation et la synthèse se rechargent
+  }
+
+  langLabel(l: string): string {
+    return ({ auto: 'automatique', fr: 'français', ja: 'japonais', en: 'anglais', de: 'allemand' } as Record<string, string>)[l] ?? l;
   }
 
   minutes(s: number): string {

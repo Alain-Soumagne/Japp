@@ -7,7 +7,7 @@ TEMPLATE = Path(__file__).parent / "templates" / "deck.html"
 
 
 def render_deck(data: dict, out_path: Path, course_label: str = "") -> Path:
-    payload = {k: data.get(k) for k in ("title", "subtitle", "sections", "homework")}
+    payload = {k: data.get(k) for k in ("title", "subtitle", "sections", "homework", "kind")}
     payload["course_label"] = course_label
     blob = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
     page = (TEMPLATE.read_text(encoding="utf-8")

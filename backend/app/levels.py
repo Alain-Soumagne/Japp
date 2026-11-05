@@ -22,7 +22,7 @@ SLOPE = 0.8               # pente de la courbe de réussite attendue
 MIX = ((0.2, -1.0), (0.6, 0.3), (0.2, 1.3))   # (part des questions, décalage par rapport au niveau)
 FULL_EVIDENCE = 8         # nombre de questions à partir duquel une session compte pleinement
 
-TYPE_OFFSET = {"reading": -1.5, "mcq": -0.5, "cloze": 0.0, "translate_ja_fr": 0.0, "short": 0.8, "translate_fr_ja": 1.2}
+TYPE_OFFSET = {"reading": -1.5, "kanji_reading": 0.6, "mcq": -0.5, "cloze": 0.0, "translate_ja_fr": 0.0, "short": 0.8, "translate_fr_ja": 1.2}
 POINTS = {"correct": 1.0, "partial": 0.5, "incorrect": 0.0}
 
 _KANJI = re.compile(r"[\u4e00-\u9fff々]")
@@ -66,7 +66,8 @@ def expected_success(level: float, difficulty: float) -> float:
     return 1 / (1 + math.exp(-SLOPE * (level - difficulty)))
 
 
-def select_questions(pool: list[dict], n: int, level: float, rng: random.Random | None = None) -> list[dict]:
+def select_questions(pool: list[dict], n: int, level: float, rng: random.Random | None = None,
+                     avoid: set[str] | None = None) -> list[dict]:
     """Choisit n questions dont les difficultés suivent le mélange cible, en variant les types."""
     rng = rng or random.Random()  # noqa: S311 - tirage pédagogique, sans enjeu de sécurité
     n = min(n, len(pool))
@@ -76,7 +77,7 @@ def select_questions(pool: list[dict], n: int, level: float, rng: random.Random 
     left = pool[:]
     rng.shuffle(left)
     used_types: dict[str, int] = {}
-    used_keys: set[str] = set()
+    used_keys: set[str] = set(avoid or ())      # phrases déjà choisies pour un autre type de question
     chosen: list[dict] = []
     for t in sorted(targets):
         def cost(q: dict, t: float = t) -> float:
@@ -89,6 +90,8 @@ def select_questions(pool: list[dict], n: int, level: float, rng: random.Random 
         if best.get("key"):
             used_keys.add(best["key"])
     rng.shuffle(chosen)
+    if avoid is not None:
+        avoid |= used_keys
     return chosen
 
 
